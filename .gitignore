@@ -1,0 +1,84 @@
+# ==============================================================================
+# Python Core & Bytecode
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ==============================================================================
+# Virtual Environments (Always ignore; recreate via requirements.txt/poetry)
+# ==============================================================================
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# ==============================================================================
+# Packaging, Distributions, and Inventories
+# ==============================================================================
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==============================================================================
+# Testing, Coverage, and Code Quality
+# ==============================================================================
+htmlcov/
+.tox/
+.nosetests/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# ==============================================================================
+# Environment Variables & Secrets (CRITICAL: Never commit credentials)
+# ==============================================================================
+.env
+.env.*
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ==============================================================================
+# IDEs and Editors (Optional but highly recommended)
+# ==============================================================================
+# JetBrains / PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# Operating System Files
+.DS_Store
+Thumbs.db
