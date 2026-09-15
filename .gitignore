@@ -82,3 +82,6 @@ pip-delete-this-directory.txt
 # Operating System Files
 .DS_Store
 Thumbs.db
+
+# DB
+db.sqlite3

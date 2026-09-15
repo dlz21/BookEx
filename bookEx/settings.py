@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -56,7 +57,7 @@ ROOT_URLCONF = "bookEx.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, 'bookEx/templates')],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -127,3 +128,7 @@ MAILERS = {
         "BACKEND": "django.core.mail.backends.console.EmailBackend",
     },
 }
+
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'bookEx/static')];
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
