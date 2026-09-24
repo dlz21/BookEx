@@ -29,11 +29,9 @@
 
         <!-- Right Main Content -->
         <main class="content">
-            <h2>Main Content</h2>
-            <p>
-                This is where your main content goes.
-                You can add text, images, forms, or anything else here.
-            </p>
+            {% block content %}
+               <h1>Main Content</h1>
+            {% endblock content %}
         </main>
 
     </div>

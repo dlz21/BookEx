@@ -1,6 +1,7 @@
 from django.http import HttpResponse
 from django.shortcuts import render
 from .models import MainMenu
+from .forms import BookForm
 
 # Create your views here.
 def index(request):
@@ -10,3 +11,11 @@ def index(request):
         {
                 'item_list': MainMenu.objects.all(),
         })
+
+def postbook(request):
+    form = BookForm()
+
+    return render(request, 'bookMng/postbook.html', {
+        'form': form,
+        'item_list': MainMenu.objects.all(),
+    })
