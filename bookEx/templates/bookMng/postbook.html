@@ -10,16 +10,20 @@
 {% endblock sidenav %}
 
 {% block content %}
-   <h1>Post Book</h1>
-  <form action="" enctype="multipart/form-data" method="post" novalidate>
-   <table>
-      {{ form.as_table }}
-      <tr>
-         <td>
-            <input type="submit" value="Submit">
-         </td>
-      </tr>
-   </table>
-
-  </form>
+    <h1>Post Book</h1>
+    {% if submitted %}
+        <h1>Book Posted Successfully!</h1>
+    {% else %}
+        <form action="" enctype="multipart/form-data" method="post" novalidate>
+            <table>
+              {{ form.as_table }}
+              <tr>
+                 <td>
+                    <input type="submit" value="Submit">
+                 </td>
+              </tr>
+            </table>
+            {% csrf_token %}
+        </form>
+    {% endif %}
 {% endblock content %}
