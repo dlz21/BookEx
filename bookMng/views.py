@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
@@ -6,7 +7,6 @@ from django.views.generic.edit import CreateView
 
 from .models import MainMenu, Book
 from .forms import BookForm
-
 
 # Create your views here.
 def index(request):
@@ -19,6 +19,7 @@ def index(request):
     )
 
 
+@login_required(login_url=reverse_lazy('login'))
 def postbook(request):
     submitted = False
     if request.method == 'POST':
@@ -31,11 +32,13 @@ def postbook(request):
             except Exception:
                 pass
             book.save()
+
             return HttpResponseRedirect('/postbook?submitted=True')
     else:
         form = BookForm()
         if 'submitted' in request.GET:
             submitted = True
+
     return render(request,
                   'bookMng/postbook.html',
                   {
@@ -44,6 +47,7 @@ def postbook(request):
                       'submitted': submitted
                   })
 
+@login_required(login_url=reverse_lazy('login'))
 def displaybooks(request):
     books = Book.objects.all()
     for b in books:
