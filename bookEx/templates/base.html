@@ -10,6 +10,19 @@
     <!-- Top Banner -->
     <header class="banner">
         <h1>Website Banner</h1>
+
+        <span style="float: right;">
+            {% if user.is_authenticated %}
+               {{ user.username}}
+               <form action="{% url 'logout' %}?next=/" method="post">
+                   <button type="submit">logout</button>
+                   {% csrf_token %}
+               </form>
+            {% else %}
+               Not Logged in
+               <a href="{% url 'login' %}?next=/">login</a>
+            {% endif %}
+        </span>
     </header>
 
     <!-- Main Layout -->

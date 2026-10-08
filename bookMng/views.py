@@ -12,10 +12,11 @@ from .forms import BookForm
 def index(request):
     return render(
         request,
-        'bookMng/displaybooks.html',
-        {
-                'item_list': MainMenu.objects.all(),
-        })
+      'bookMng/index.html',
+      {
+        'item_list': MainMenu.objects.all()
+      }
+    )
 
 
 def postbook(request):
@@ -23,19 +24,25 @@ def postbook(request):
     if request.method == 'POST':
         form = BookForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            #form.save()
+            book = form.save(commit=False)
+            try:
+                book.username = request.user
+            except Exception:
+                pass
+            book.save()
             return HttpResponseRedirect('/postbook?submitted=True')
     else:
         form = BookForm()
         if 'submitted' in request.GET:
             submitted = True
-
-    return render(request, 'bookMng/postbook.html', {
-        'form': form,
-        'item_list': MainMenu.objects.all(),
-        'submitted': submitted,
-    })
-
+    return render(request,
+                  'bookMng/postbook.html',
+                  {
+                      'form': form,
+                      'item_list': MainMenu.objects.all(),
+                      'submitted': submitted
+                  })
 
 def displaybooks(request):
     books = Book.objects.all()
