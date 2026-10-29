@@ -59,6 +59,36 @@ def displaybooks(request):
         'books': books
     })
 
+def book_detail(request, book_id):
+    book = Book.objects.get(id=book_id)
+    book.pic_path = book.picture.url[14:]
+
+    return render(request,'bookMng/book_detail.html', {
+        'item_list': MainMenu.objects.all(),
+        'book': book
+    })
+
+def mybooks(request):
+    books = Book.objects.filter(username=request.user)
+
+    for b in books:
+        b.pic_path = b.picture.url[14:]
+
+    return render(request,'bookMng/mybooks.html', {
+        'item_list': MainMenu.objects.all(),
+        'books': books
+    })
+
+
+def book_delete(request, book_id):
+    book = Book.objects.get(id=book_id)
+    book.delete()
+
+    return render(request,'bookMng/book_delete.html', {
+        'item_list': MainMenu.objects.all(),
+    })
+
+
 class Register(CreateView):
     template_name = 'registration/register.html'
     form_class = UserCreationForm
