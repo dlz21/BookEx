@@ -1,6 +1,4 @@
 {% load static %}
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,8 +14,7 @@
     <header class="banner">
         <h1>Website Banner</h1>
 
-        <!-- User -->    <link rel="stylesheet" href="../static/styles.css">
-    <link rel="stylesheet" href="../static/table_format.css" type="text/css" />
+        <!-- User -->
         <span style="float: right;">
             {% if user.is_authenticated %}
                {{ user.username}}
