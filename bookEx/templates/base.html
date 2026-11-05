@@ -1,10 +1,14 @@
+{% load static %}
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Simple Layout</title>
-    <link rel="stylesheet" href="../static/styles.css">
-    <link rel="stylesheet" href="../static/table_format.css" type="text/css" />
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link rel="stylesheet" href="{% static 'table_format.css' %}">
+    <link rel="stylesheet" href="{% static 'message_box.css' %}">
 </head>
 <body>
 
@@ -12,7 +16,8 @@
     <header class="banner">
         <h1>Website Banner</h1>
 
-        <!-- User -->
+        <!-- User -->    <link rel="stylesheet" href="../static/styles.css">
+    <link rel="stylesheet" href="../static/table_format.css" type="text/css" />
         <span style="float: right;">
             {% if user.is_authenticated %}
                {{ user.username}}
@@ -37,6 +42,7 @@
                     <li><a href="#about">About</a></li>
                     <li><a href="#service">Service</a></li>
                     <li><a href="#contact">Contact</a></li>
+
                 {% endblock sidenav %}
             </ul>
         </nav>

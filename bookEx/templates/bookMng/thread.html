@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="message-box-container">
+    <div class="message-box-header">
+        <div>
+            <h1>Conversation with {{ other_user.username }}</h1>
+            <a class="back-link" href="{% url 'inbox' %}">← Back to Inbox</a>
+        </div>
+
+        <form method="post" action="{% url 'mark_thread_read' thread.id %}">
+            {% csrf_token %}
+            <button class="btn-secondary" type="submit">Mark Read</button>
+        </form>
+    </div>
+
+    <div class="message-thread-panel">
+        {% for msg in thread_messages %}
+            <div class="message-bubble {% if msg.sender == request.user %}sent{% else %}received{% endif %}">
+                <div class="message-meta">
+                    <span class="message-author">{{ msg.sender.username }}</span>
+                    <span class="message-date">{{ msg.created_at|date:"M d, Y H:i" }}</span>
+                </div>
+                <div class="message-text">{{ msg.body|linebreaksbr }}</div>
+            </div>
+        {% empty %}
+            <div class="empty-state">
+                <p>No messages in this conversation yet.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <form method="post" class="message-compose-form">
+        {% csrf_token %}
+        <label for="id_body">Reply</label>
+        <textarea id="id_body" name="body" rows="5" placeholder="Write your message here..."></textarea>
+        <button class="btn-primary" type="submit">Send Message</button>
+    </form>
+</div>
+{% endblock %}

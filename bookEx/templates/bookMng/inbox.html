@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="message-box-container">
+    <div class="message-box-header">
+        <h1>Inbox</h1>
+        <a class="btn-primary" href="{% url 'compose_message' %}">New Message</a>
+    </div>
+
+    {% if thread_data %}
+        <div class="thread-list">
+            {% for item in thread_data %}
+                <a class="thread-card" href="{% url 'thread_detail' item.thread.id %}">
+                    <div class="thread-card-top">
+                        <span class="thread-username">{{ item.other_user.username }}</span>
+                        {% if item.latest_message %}
+                            <span class="thread-time">{{ item.latest_message.created_at|date:"M d, Y H:i" }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="thread-card-body">
+                        {% if item.latest_message %}
+                            <p>
+                                <strong>
+                                    {% if item.latest_message.sender == request.user %}
+                                        You:
+                                    {% else %}
+                                        {{ item.other_user.username }}:
+                                    {% endif %}
+                                </strong>
+                                {{ item.latest_message.body|truncatechars:90 }}
+                            </p>
+                        {% else %}
+                            <p>No messages yet.</p>
+                        {% endif %}
+                    </div>
+
+                    {% if item.unread_count > 0 %}
+                        <div class="thread-unread-badge">
+                            {{ item.unread_count }} unread
+                        </div>
+                    {% endif %}
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p>You have no conversations yet.</p>
+            <a class="btn-primary" href="{% url 'compose_message' %}">Start a Conversation</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
