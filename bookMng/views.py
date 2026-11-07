@@ -137,6 +137,7 @@ def inbox(request: HttpRequest) -> HttpResponse:
 
     context = {
         "thread_data": thread_data,
+        'item_list': MainMenu.objects.all(),
     }
     return render(request, "bookMng/inbox.html", context)
 
@@ -178,6 +179,7 @@ def thread_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
         "thread": thread,
         "other_user": thread.other_user(request.user),
         "thread_messages": thread_messages,
+        'item_list': MainMenu.objects.all(),
     }
     return render(request, "bookMng/thread.html", context)
 
@@ -242,6 +244,7 @@ def compose_message(request: HttpRequest) -> HttpResponse:
     context = {
         "available_users": available_users,
         "selected_user": selected_user,
+        'item_list': MainMenu.objects.all(),
     }
     return render(request, "bookMng/compose.html", context)
 
