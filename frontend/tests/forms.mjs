@@ -1,0 +1,134 @@
+// Dependency-free Chrome DevTools check, launched against Django's isolated live
+// test server by PatternFlyBrowserTests. Never points at the development database.
+import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+const [chromePath, baseUrl, imagePath, mode] = process.argv.slice(2);
+const profile = await mkdtemp(join(tmpdir(), "bookex-chrome-"));
+const chrome = spawn(chromePath, [
+  "--headless", "--no-sandbox", "--disable-gpu", "--no-first-run",
+  "--disable-background-networking", "--disable-component-update",
+  "--remote-debugging-pipe", `--user-data-dir=${profile}`, "about:blank",
+], { stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"] });
+
+let sequence = 0;
+let buffer = "";
+let chromeErrors = "";
+const pending = new Map();
+const runtimeErrors = [];
+const networkErrors = [];
+chrome.stderr.on("data", (chunk) => { chromeErrors += chunk; });
+chrome.on("error", (error) => {
+  for (const { reject } of pending.values()) reject(error);
+});
+chrome.stdio[4].on("data", (chunk) => {
+  buffer += chunk;
+  let end;
+  while ((end = buffer.indexOf("\0")) !== -1) {
+    const message = JSON.parse(buffer.slice(0, end));
+    buffer = buffer.slice(end + 1);
+    const request = pending.get(message.id);
+    if (request) {
+      pending.delete(message.id);
+      if (message.error) request.reject(new Error(JSON.stringify(message.error)));
+      else request.resolve(message.result);
+    }
+    if (message.method === "Runtime.exceptionThrown") runtimeErrors.push(message.params);
+    if (message.method === "Network.responseReceived") {
+      const { url, status } = message.params.response;
+      if (url.includes("/static/") && status >= 400) networkErrors.push({ url, status });
+    }
+  }
+});
+
+async function command(method, params = {}, sessionId) {
+  const id = ++sequence;
+  const result = new Promise((resolve, reject) => { pending.set(id, { resolve, reject }); });
+  chrome.stdio[3].write(JSON.stringify({ id, method, params, sessionId }) + "\0");
+  const timeout = setTimeout(() => pending.get(id)?.reject(new Error(`${method} timed out\n${chromeErrors}`)), 10000);
+  try { return await result; }
+  finally { clearTimeout(timeout); pending.delete(id); }
+}
+
+try {
+  const { targetId } = await command("Target.createTarget", { url: "about:blank" });
+  const { sessionId } = await command("Target.attachToTarget", { targetId, flatten: true });
+  const send = (method, params) => command(method, params, sessionId);
+  await send("Page.enable");
+  await send("Runtime.enable");
+  await send("Network.enable");
+  await send("Emulation.setScriptExecutionDisabled", { value: mode === "no-js" });
+  const evaluate = async (expression) => {
+    const result = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
+    assert.equal(result.exceptionDetails, undefined, JSON.stringify(result.exceptionDetails));
+    return result.result.value;
+  };
+  const until = async (expression) => {
+    const deadline = Date.now() + 10000;
+    while (Date.now() < deadline) {
+      try { if (await evaluate(expression)) return; } catch { /* navigation changes contexts */ }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error(`Browser condition timed out: ${expression}`);
+  };
+  const navigate = async (path) => {
+    const url = baseUrl + path;
+    await send("Page.navigate", { url });
+    await until(`location.href === ${JSON.stringify(url)} && document.readyState === 'complete'`);
+  };
+  const fill = (selector, value) => evaluate(`(() => {
+    const field = document.querySelector(${JSON.stringify(selector)});
+    field.value = ${JSON.stringify(value)};
+    field.dispatchEvent(new Event('input', {bubbles: true}));
+  })()`);
+  const enter = async (selector) => {
+    await evaluate(`document.querySelector(${JSON.stringify(selector)}).focus()`);
+    await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r" });
+    await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
+  };
+
+  await navigate("/login/?next=/postbook");
+  assert.equal(await evaluate("document.querySelector('#id_password').type"), "password");
+  await until("getComputedStyle(document.querySelector('.pf-v6-c-card')).borderRadius !== '0px'");
+  await fill("#id_username", "prototype");
+  await fill("#id_password", "wrong-password");
+  await enter("#id_password");
+  await until("!!document.querySelector('[data-form-errors]')");
+  assert.equal(await evaluate("document.querySelector('#id_username').value"), "prototype");
+  assert.equal(await evaluate("document.querySelector('#id_password').value"), "");
+  if (mode === "js") await until("document.activeElement.hasAttribute('data-form-errors')");
+  await fill("#id_password", "Test-password-293!");
+  await enter("#id_password");
+  await until("location.pathname === '/postbook' && !!document.querySelector('#id_picture')");
+
+  await fill("#id_name", "Browser prototype");
+  await fill("#id_web", "https://example.com/book");
+  await fill("#id_price", "12.50");
+  await enter("#id_price");
+  await until("!!document.querySelector('#id_picture_error')");
+  assert.equal(await evaluate("document.querySelector('#id_name').value"), "Browser prototype");
+  assert.equal(await evaluate("document.querySelector('#id_picture').getAttribute('aria-invalid')"), "true");
+  assert.equal(await evaluate("document.querySelector('#id_picture').getAttribute('aria-describedby')"), "id_picture_error");
+  const { root } = await send("DOM.getDocument");
+  const { nodeId } = await send("DOM.querySelector", { nodeId: root.nodeId, selector: "#id_picture" });
+  await send("DOM.setFileInputFiles", { nodeId, files: [imagePath] });
+  for (const width of [360, 768, 1280]) {
+    await send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: false });
+    await until("document.documentElement.scrollWidth <= innerWidth");
+  }
+  await enter("#id_price");
+  await until("location.search === '?submitted=True' && !!document.querySelector('[role=status]')");
+  assert.equal(await evaluate("document.querySelector('[role=status]').textContent.includes('Book posted successfully!')"), true);
+  assert.deepEqual(runtimeErrors, []);
+  assert.deepEqual(networkErrors, []);
+  console.log(`PASS (${mode}): PF styles, password, Enter submission, validation, retained values, CSRF, upload, success, responsive widths`);
+} finally {
+  await command("Browser.close").catch(() => {});
+  chrome.kill();
+  // Chrome may still be flushing its temporary profile after Browser.close.
+  if (chrome.exitCode === null) await new Promise((resolve) => chrome.once("exit", resolve));
+  await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+}

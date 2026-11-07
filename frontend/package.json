@@ -14,7 +14,7 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "@patternfly/elements": "^5.0.0",
+    "@patternfly/patternfly": "6.7.0",
     "esbuild": "^0.28.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"

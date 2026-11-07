@@ -8,8 +8,10 @@ assets; it is not required to run Django after those assets have been delivered.
 
 The frontend build works, but the PatternFly migration is still in progress:
 
-- `frontend/src/main.ts` is currently empty, so the JavaScript bundle is empty.
-  `frontend/src/main.css` contains the existing styles; the CSS bundle is populated.
+- Login and post-book are the first PatternFly prototype: PF6 HTML/CSS cards,
+  validation/success alerts, and native Django forms. Other pages still need migration.
+- `frontend/src/main.ts` imports prototype CSS and focuses the rendered error
+  summary. `frontend/src/main.css` retains legacy styling for remaining pages.
 - `bookEx/templates/base.html` loads the generated CSS and JavaScript module.
 - `STATIC_ROOT` is configured and static collection works. A production
   application/static server is still not configured.
@@ -80,9 +82,11 @@ Run frontend commands inside `frontend/`:
 | `npm run watch` | Rebuild browser bundles on changes, with source maps |
 | `npm run typecheck:watch` | Continuously report TypeScript errors |
 
-Edit `frontend/src/main.ts` for explicit component imports and browser behavior;
-edit `frontend/src/main.css` for framework CSS imports and application overrides.
-`build.mjs` loads both sources through an in-memory entry point. It emits:
+Edit `frontend/src/main.ts` for browser behavior and the prototype CSS entry;
+edit `frontend/src/prototype.css` for the selected PatternFly component CSS imports
+and prototype layout. `frontend/src/main.css` retains legacy styling. CSS-only
+imports are declared in `src/css.d.ts`; strict side-effect-import checking is enabled.
+`build.mjs` loads `main.ts` and `main.css` through an in-memory entry point. It emits:
 
 ```text
 bookEx/static/dist/
@@ -92,9 +96,11 @@ bookEx/static/dist/
 ```
 
 The build targets ES2022 browsers and emits an ES module. Imported fonts/images
-use local files rather than a runtime CDN. Choose compatible PatternFly Elements
-and core CSS versions before adding imports; installation alone does not apply
-PatternFly to templates.
+use local files rather than a runtime CDN. The prototype pins
+`@patternfly/patternfly` to 6.7.0 and uses matching `pf-v6-*` HTML/CSS APIs.
+Elements was removed by the package change; no web components or React are
+required. Do not add `pf-v5-*` Elements to this PF6 design without separately
+proving compatibility.
 
 Each build/watch startup removes only `bookEx/static/dist/`. Do not put source
 files or uploads there. Existing `bookEx/static/uploads/` is outside that cleanup
@@ -211,15 +217,40 @@ python manage.py test
 python manage.py findstatic dist/main.js dist/main.css --verbosity 2
 ```
 
-As of November 7, 2026, build/typecheck and Django checks pass. Django discovers
-zero tests, so a successful test command does not demonstrate regression coverage.
-Browser automation is not configured. Once static integration is added, manually
-check book, authentication, and messaging journeys, keyboard/mobile behavior, and
-asset requests from nested routes such as `/thread/<id>/`. Static collection
-has also been verified locally: 137 files copied, including matching JS/CSS
-bundles and Django admin CSS. Rendering the base template for a nested request
-confirms absolute asset URLs and the module script tag; this is not a browser or
-production-server check.
+As of November 7, 2026, build/typecheck and Django checks pass. The six Django
+regression tests cover login/`next`, invalid credentials, protected posting,
+linked validation errors/escaping, CSRF rejection, and upload/success with isolated
+storage. Two opt-in Chrome checks exercise actual native Enter-key submission,
+password input, invalid forms, upload, responsive widths, and success with page
+JavaScript enabled and disabled. These checks passed; the rest of the application
+still needs regression and accessibility coverage.
+
+Build first, then run browser checks from the root:
+
+```bash
+BOOKEX_BROWSER_TESTS=1 python manage.py test bookMng.tests.PatternFlyBrowserTests
+```
+
+Prerequisites are Node and Chrome/Chromium. The test runner discovers
+`google-chrome` or `chromium`; set `CHROME_BIN` to another executable path if
+needed. It uses Django's temporary live server/database, temporary uploads, and
+a temporary headless browser profile. Local sockets and browser execution must
+be permitted. No Playwright dependency or running development server is required.
+Default `python manage.py test` skips these two browser cases; it still runs the
+six server regression cases.
+
+To try the prototype manually, run Django, visit `/login/?next=/postbook`, submit
+invalid credentials, then log in and submit an incomplete post. Check field
+errors and retained values, select a file, and submit with Enter from a single-line
+field. Repeat with JavaScript disabled. Passwords are not echoed back on error;
+browsers require reselecting a file after a failed POST. The tests verify these
+server-rendered forms without adding duplicate hidden controls or intercepting
+submission.
+
+Static collection was also verified locally, including matching bundles and
+Django admin CSS. Run `collectstatic` again after changes intended for deployment.
+Production static-server configuration and full application journeys remain
+unverified.
 
 ## Deployment
 
@@ -293,7 +324,7 @@ that needs validation against emitted CSS/JS asset references.
 | --- | --- |
 | Bundler cannot resolve `src/main.css` | The stylesheet must match the path in `build.mjs`; the current name is `main.css` |
 | `tsc` or esbuild is missing | Run `npm ci` in `frontend/` with development dependencies included |
-| JavaScript bundle is zero bytes | Add component/application imports to the currently empty `src/main.ts`; CSS is already populated |
+| Styles look unchanged | Rebuild, confirm `prototype.css` is imported, and inspect `/static/dist/main.css`; only login/post-book use PF6 markup so far |
 | Build succeeds but the page looks unchanged | Load bundles in `base.html`, refresh, and inspect the network panel |
 | Nested routes return asset 404s | Use Django static tags and verify the static URL/server mapping |
 | `collectstatic` reports no filesystem path | Configure `STATIC_ROOT` in the settings used for that command |

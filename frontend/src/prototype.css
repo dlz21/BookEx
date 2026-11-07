@@ -1,0 +1,56 @@
+@import "@patternfly/patternfly/base/patternfly-variables.css";
+@import "@patternfly/patternfly/components/Card/card.css";
+@import "@patternfly/patternfly/components/Alert/alert.css";
+@import "@patternfly/patternfly/components/Form/form.css";
+@import "@patternfly/patternfly/components/FormControl/form-control.css";
+@import "@patternfly/patternfly/components/Button/button.css";
+
+/* Layout and accessibility for the two prototype pages; component visuals come
+   from the installed PatternFly 6 styles above. */
+.pf-prototype {
+  width: 100%;
+  max-width: 42rem;
+  margin-inline: auto;
+  color: var(--pf-t--global--text--color--regular);
+  line-height: var(--pf-t--global--font--line-height--body);
+}
+
+.pf-prototype .pf-v6-c-card__body,
+.pf-prototype .pf-v6-c-card__footer {
+  display: grid;
+  gap: var(--pf-t--global--spacer--md);
+}
+
+.pf-prototype .errorlist {
+  padding-inline-start: var(--pf-t--global--spacer--lg);
+}
+
+.pf-prototype .pf-v6-c-form__helper-text,
+.pf-prototype .errorlist {
+  overflow-wrap: anywhere;
+}
+
+.pf-prototype .pf-v6-c-form__group-control > .errorlist {
+  color: var(--pf-t--global--text--color--status--danger--default);
+}
+
+.pf-prototype :focus-visible {
+  outline: 2px solid var(--pf-t--global--color--brand--default);
+  outline-offset: 3px;
+}
+
+/* The existing sidebar layout is still pending migration. Keep the prototype's
+   native controls usable while that shared shell is being replaced. */
+.content {
+  min-width: 0;
+}
+
+@media (max-width: 48rem) {
+  .container:has(.pf-prototype) {
+    flex-direction: column;
+  }
+
+  .container:has(.pf-prototype) > .sidebar {
+    width: 100%;
+  }
+}
