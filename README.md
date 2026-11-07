@@ -8,10 +8,11 @@ assets; it is not required to run Django after those assets have been delivered.
 
 The frontend build works, but the PatternFly migration is still in progress:
 
-- `frontend/src/main.ts` is currently empty, so the build produces empty
-  bundles until imports are added.
-- `bookEx/templates/base.html` does not yet load the generated bundles.
-- `STATIC_ROOT` and a production application/static server are not configured.
+- `frontend/src/main.ts` is currently empty, so the JavaScript bundle is empty.
+  `frontend/src/main.css` contains the existing styles; the CSS bundle is populated.
+- `bookEx/templates/base.html` loads the generated CSS and JavaScript module.
+- `STATIC_ROOT` is configured and static collection works. A production
+  application/static server is still not configured.
 - There is no Python dependency manifest yet. The setup below installs the
   currently used Django version; it does not lock transitive Python dependencies.
 
@@ -132,10 +133,7 @@ run `npm run build` again before delivery to replace development output.
 
 ## Django static integration
 
-These changes are still required; the snippets below document what to configure
-and are not already present in the application.
-
-Add the bundles once to the shared base template's `<head>`:
+The shared base template loads the bundles once in its `<head>`:
 
 ```django
 {% load static %}
@@ -143,20 +141,58 @@ Add the bundles once to the shared base template's `<head>`:
 <script type="module" src="{% static 'dist/main.js' %}"></script>
 ```
 
-Keep required legacy styles during the incremental migration. Remove them when
-their pages have been migrated and verified.
+Legacy styling now lives in `frontend/src/main.css`; replacing it with verified
+PatternFly patterns remains migration work.
 
-Set a collection destination separate from source static directories in the
-settings used for deployment. For a site served at the domain root:
+The settings configure a collection destination separate from source static
+files, with an absolute URL for a site served at the domain root:
 
 ```python
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 ```
 
-Keep the existing `STATICFILES_DIRS` entry for `bookEx/static`. Do not add
-`STATIC_ROOT` to `STATICFILES_DIRS`. For a subpath or CDN deployment, choose the
-appropriate static URL and verify font/image references under that URL.
+The three settings have different jobs:
+
+| Setting | Value here | Purpose |
+| --- | --- | --- |
+| `STATICFILES_DIRS` | `[BASE_DIR / "bookEx" / "static"]` | Input: where Django finds project assets, including built bundles |
+| `STATIC_ROOT` | `BASE_DIR / "staticfiles"` | Output: where `collectstatic` assembles a deployment copy of project and installed-app assets |
+| `STATIC_URL` | `/static/` | Browser URL prefix; the production server maps this to collected files |
+
+The asset flow is:
+
+```text
+frontend/src/ -> npm run build -> bookEx/static/dist/
+                                      |
+installed-app static assets -----------+-> collectstatic -> staticfiles/
+                                                               |
+                                                      production static server
+                                                               |
+                                                        /static/... URLs
+```
+
+`STATIC_ROOT` is needed for the filesystem-based production collection workflow.
+Without it, `collectstatic` has no destination. During development, `runserver`
+with `DEBUG=True` can discover source assets directly, which is why pages can
+work before collection is configured. Setting `STATIC_ROOT` does not start a
+static server or make production serving automatic.
+
+Keep `STATIC_ROOT` separate from `STATICFILES_DIRS`; collection must not copy
+output back into its inputs. Treat `staticfiles/` as generated, ignored output,
+not a place to edit CSS or keep the only copy of uploads. After each frontend
+build intended for deployment, refresh it from the repository root:
+
+```bash
+python manage.py collectstatic --noinput
+```
+
+This copies the generated bundles, Django admin assets, and other discovered
+static files into one directory for the production server. For a subpath or CDN
+deployment, choose the appropriate static URL and verify font/image references
+under that URL. See Django's
+[staticfiles reference](https://docs.djangoproject.com/en/6.0/ref/contrib/staticfiles/)
+for collection behavior.
 
 ## Checks
 
@@ -179,13 +215,18 @@ As of November 7, 2026, build/typecheck and Django checks pass. Django discovers
 zero tests, so a successful test command does not demonstrate regression coverage.
 Browser automation is not configured. Once static integration is added, manually
 check book, authentication, and messaging journeys, keyboard/mobile behavior, and
-asset requests from nested routes such as `/thread/<id>/`.
+asset requests from nested routes such as `/thread/<id>/`. Static collection
+has also been verified locally: 137 files copied, including matching JS/CSS
+bundles and Django admin CSS. Rendering the base template for a nested request
+confirms absolute asset URLs and the module script tag; this is not a browser or
+production-server check.
 
 ## Deployment
 
 Deployment is a build step followed by static collection and application release.
 The repository does not yet choose a hosting platform or production server.
-Complete the static integration above before using this procedure.
+Local static integration and collection are configured; production server and
+settings configuration still need to be supplied for this procedure.
 
 1. Install Python dependencies in the deployment environment and configure the
    production settings. Set `DEBUG=False`, appropriate `ALLOWED_HOSTS`, and a
@@ -252,7 +293,7 @@ that needs validation against emitted CSS/JS asset references.
 | --- | --- |
 | Bundler cannot resolve `src/main.css` | The stylesheet must match the path in `build.mjs`; the current name is `main.css` |
 | `tsc` or esbuild is missing | Run `npm ci` in `frontend/` with development dependencies included |
-| Bundles are zero bytes | Add actual imports/styles; current source files are empty |
+| JavaScript bundle is zero bytes | Add component/application imports to the currently empty `src/main.ts`; CSS is already populated |
 | Build succeeds but the page looks unchanged | Load bundles in `base.html`, refresh, and inspect the network panel |
 | Nested routes return asset 404s | Use Django static tags and verify the static URL/server mapping |
 | `collectstatic` reports no filesystem path | Configure `STATIC_ROOT` in the settings used for that command |
