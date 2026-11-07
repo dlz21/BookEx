@@ -4,16 +4,18 @@
   "description": "",
   "main": "src/main.ts",
   "scripts": {
-    "dev": "tsx src/main.ts",
-    "build": "tsc",
-    "start": "node dist/main.js",
-    "typecheck": "tsc --noEmit"
+    "build": "npm run typecheck && node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
+    "watch": "node build.mjs --watch"
   },
   "keywords": [],
-  "author": "",
+  "author": "Leo Zavala",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@patternfly/elements": "^5.0.0",
+    "esbuild": "^0.28.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }
