@@ -67,9 +67,11 @@ python manage.py runserver
 A new database has no application menu records. After creating an administrator,
 use `/admin/` to add `MainMenu` records as needed. Existing destinations include
 Home (`/`), Post Book (`/postbook`), Display Books (`/displaybooks`), My Books
-(`/mybooks`), Compose Message (`/compose/`), and Inbox (`/inbox/`). Use paths
-starting with `/` so navigation also works from nested thread routes. Anonymous
-access to My Books is a known baseline issue; use it while logged in.
+(`/mybooks`), Compose Message (`/compose/`), and Inbox (`/inbox/`). The shared
+sidebar resolves known application destinations by URL name, including legacy
+relative `compose/` and `inbox/` records. Custom relative paths are anchored at
+Home. My Books and messaging require login; anonymous visitors use `/login/`
+with a `next` destination preserved for after sign-in.
 
 ## Build and source layout
 
@@ -217,10 +219,11 @@ python manage.py test
 python manage.py findstatic dist/main.js dist/main.css --verbosity 2
 ```
 
-As of November 7, 2026, build/typecheck and Django checks pass. The six Django
-regression tests cover login/`next`, invalid credentials, protected posting,
-linked validation errors/escaping, CSRF rejection, and upload/success with isolated
-storage. Two opt-in Chrome checks exercise actual native Enter-key submission,
+As of November 7, 2026, build/typecheck and Django checks pass. Twelve Django
+regression tests cover login/`next`, anonymous messaging/My Books redirects,
+owner-filtered My Books, sidebar navigation from nested routes and invalid compose
+responses, invalid credentials, protected posting, linked validation errors/escaping,
+CSRF rejection, and upload/success with isolated storage. Two opt-in Chrome checks exercise actual native Enter-key submission,
 password input, invalid forms, upload, responsive widths, and success with page
 JavaScript enabled and disabled. These checks passed; the rest of the application
 still needs regression and accessibility coverage.
@@ -237,7 +240,7 @@ needed. It uses Django's temporary live server/database, temporary uploads, and
 a temporary headless browser profile. Local sockets and browser execution must
 be permitted. No Playwright dependency or running development server is required.
 Default `python manage.py test` skips these two browser cases; it still runs the
-six server regression cases.
+twelve server regression cases.
 
 To try the prototype manually, run Django and visit `/login/?next=/postbook`.
 Submit empty fields to see native browser popovers such as “Please fill out this

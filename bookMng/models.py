@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.urls import reverse
+from urllib.parse import urljoin
 
 from django.conf import settings
 from django.utils import timezone
@@ -11,6 +13,23 @@ class MainMenu(models.Model):
 
     def __str__(self):
         return self.item
+
+    def get_absolute_url(self):
+        # Older menu records store paths such as "inbox/". Resolve known
+        # destinations by name so links work from every page, including threads.
+        routes = {
+            "": "index",
+            "postbook": "postbook",
+            "displaybooks": "displaybooks",
+            "mybooks": "mybooks",
+            "compose": "compose_message",
+            "inbox": "inbox",
+        }
+        route = routes.get(self.link.strip("/"))
+        if route:
+            return reverse(route)
+        # Keep custom/external destinations; anchor relative local paths at home.
+        return urljoin(reverse("index"), self.link)
 
 class Book(models.Model):
     name = models.CharField(max_length=200)

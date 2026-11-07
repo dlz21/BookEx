@@ -3,11 +3,7 @@
 {% load static %}
 
 {% block sidenav %}
-   {% for item in item_list %}
-      <li>
-        <a href="{{ item.link }}">  {{ item.item }} </a>
-      </li>
-   {% endfor %}
+  {% include "includes/sidebar_links.html" %}
 {% endblock sidenav %}
 
 {% block content %}

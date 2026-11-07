@@ -77,6 +77,7 @@ def book_detail(request, book_id):
         'book': book
     })
 
+@login_required
 def mybooks(request):
     books = Book.objects.filter(username=request.user)
 
@@ -209,6 +210,7 @@ def compose_message(request: HttpRequest) -> HttpResponse:
                 {
                     "available_users": available_users,
                     "selected_user": selected_user,
+                    "item_list": MainMenu.objects.all(),
                 },
             )
 
@@ -226,6 +228,7 @@ def compose_message(request: HttpRequest) -> HttpResponse:
                 {
                     "available_users": available_users,
                     "selected_user": recipient,
+                    "item_list": MainMenu.objects.all(),
                 },
             )
 

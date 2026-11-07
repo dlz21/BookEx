@@ -54,6 +54,9 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "bookEx.urls"
 
+# Resolve the application's named login route for @login_required redirects.
+LOGIN_URL = "login"
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
