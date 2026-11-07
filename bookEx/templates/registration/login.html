@@ -11,7 +11,7 @@
   <section class="pf-prototype pf-v6-c-card" aria-labelledby="login-title">
     <div class="pf-v6-c-card__title"><h1 id="login-title">User Login</h1></div>
     <div class="pf-v6-c-card__body">
-      <form class="pf-v6-c-form" action="{% url 'login' %}" method="post" novalidate>
+      <form class="pf-v6-c-form" action="{% url 'login' %}" method="post">
         {% csrf_token %}
         {% include "includes/form_fields.html" %}
         <input type="hidden" name="next" value="{{ next }}">

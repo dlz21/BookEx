@@ -239,13 +239,24 @@ be permitted. No Playwright dependency or running development server is required
 Default `python manage.py test` skips these two browser cases; it still runs the
 six server regression cases.
 
-To try the prototype manually, run Django, visit `/login/?next=/postbook`, submit
-invalid credentials, then log in and submit an incomplete post. Check field
-errors and retained values, select a file, and submit with Enter from a single-line
-field. Repeat with JavaScript disabled. Passwords are not echoed back on error;
-browsers require reselecting a file after a failed POST. The tests verify these
-server-rendered forms without adding duplicate hidden controls or intercepting
-submission.
+To try the prototype manually, run Django and visit `/login/?next=/postbook`.
+Submit empty fields to see native browser popovers such as “Please fill out this
+field.” These checks use Django's rendered `required`, input type, and numeric
+step attributes; they work without JavaScript and block the POST. The exact
+message depends on the browser and its language. PatternFly error borders appear
+for client-invalid fields after interaction and clear when their values are valid;
+untouched controls stay neutral. See MDN's
+[constraint-validation guide](https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Forms/Form_validation).
+
+Next, submit filled-in but incorrect credentials to see Django's server-rendered
+error alert. After login, try a malformed book URL, a price with more than two
+decimal places, or an omitted file, then correct them and submit with Enter.
+Django still validates every request: browser constraints can be bypassed and do
+not replace authentication or server validation. Server-returned error messages
+remain visible until the next response. Passwords are not echoed back on error;
+browsers require reselecting a file after a failed POST. Browser tests cover both
+native POST blocking and a deliberate client-validation bypass to verify server
+errors, with page JavaScript enabled and disabled.
 
 Static collection was also verified locally, including matching bundles and
 Django admin CSS. Run `collectstatic` again after changes intended for deployment.

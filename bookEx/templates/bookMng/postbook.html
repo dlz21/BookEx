@@ -22,7 +22,7 @@
         </div>
       </div>
     {% else %}
-      <form class="pf-v6-c-form" action="{% url 'postbook' %}" enctype="multipart/form-data" method="post" novalidate>
+      <form class="pf-v6-c-form" action="{% url 'postbook' %}" enctype="multipart/form-data" method="post">
         {% csrf_token %}
         {% include "includes/form_fields.html" %}
         <div class="pf-v6-c-form__group pf-m-action">

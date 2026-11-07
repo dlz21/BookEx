@@ -20,6 +20,7 @@ let chromeErrors = "";
 const pending = new Map();
 const runtimeErrors = [];
 const networkErrors = [];
+let formPosts = 0;
 chrome.stderr.on("data", (chunk) => { chromeErrors += chunk; });
 chrome.on("error", (error) => {
   for (const { reject } of pending.values()) reject(error);
@@ -37,6 +38,7 @@ chrome.stdio[4].on("data", (chunk) => {
       else request.resolve(message.result);
     }
     if (message.method === "Runtime.exceptionThrown") runtimeErrors.push(message.params);
+    if (message.method === "Network.requestWillBeSent" && message.params.request.method === "POST") formPosts++;
     if (message.method === "Network.responseReceived") {
       const { url, status } = message.params.response;
       if (url.includes("/static/") && status >= 400) networkErrors.push({ url, status });
@@ -89,11 +91,24 @@ try {
     await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r" });
     await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
   };
+  const blockedSubmission = async (submitFrom, invalidField, validityFlag) => {
+    const postsBefore = formPosts;
+    await enter(submitFrom);
+    await until(`document.activeElement === document.querySelector(${JSON.stringify(invalidField)}) &&
+      document.activeElement.validity[${JSON.stringify(validityFlag)}] &&
+      document.activeElement.validationMessage.length > 0`);
+    assert.equal(formPosts, postsBefore, "Invalid fields must block the POST");
+  };
 
   await navigate("/login/?next=/postbook");
   assert.equal(await evaluate("document.querySelector('#id_password').type"), "password");
   await until("getComputedStyle(document.querySelector('.pf-v6-c-card')).borderRadius !== '0px'");
+  assert.equal(await evaluate("document.querySelector('#id_username').matches(':user-invalid')"), false);
+  await blockedSubmission("#id_username", "#id_username", "valueMissing");
+  assert.equal(await evaluate("document.querySelector('#id_username').matches(':user-invalid')"), true);
   await fill("#id_username", "prototype");
+  assert.equal(await evaluate("document.querySelector('#id_username').matches(':user-invalid')"), false);
+  await blockedSubmission("#id_username", "#id_password", "valueMissing");
   await fill("#id_password", "wrong-password");
   await enter("#id_password");
   await until("!!document.querySelector('[data-form-errors]')");
@@ -105,8 +120,18 @@ try {
   await until("location.pathname === '/postbook' && !!document.querySelector('#id_picture')");
 
   await fill("#id_name", "Browser prototype");
-  await fill("#id_web", "https://example.com/book");
+  await fill("#id_web", "invalid-url");
   await fill("#id_price", "12.50");
+  await blockedSubmission("#id_web", "#id_web", "typeMismatch");
+  await fill("#id_web", "https://example.com/book");
+  await fill("#id_price", "12.501");
+  await blockedSubmission("#id_price", "#id_price", "stepMismatch");
+  await fill("#id_price", "12.50");
+  await blockedSubmission("#id_price", "#id_picture", "valueMissing");
+
+  // Deliberately bypass client constraints once to prove Django still rejects
+  // malformed requests. This modifies only the test page, not application code.
+  await evaluate("document.querySelector('form.pf-v6-c-form').noValidate = true");
   await enter("#id_price");
   await until("!!document.querySelector('#id_picture_error')");
   assert.equal(await evaluate("document.querySelector('#id_name').value"), "Browser prototype");
@@ -124,7 +149,7 @@ try {
   assert.equal(await evaluate("document.querySelector('[role=status]').textContent.includes('Book posted successfully!')"), true);
   assert.deepEqual(runtimeErrors, []);
   assert.deepEqual(networkErrors, []);
-  console.log(`PASS (${mode}): PF styles, password, Enter submission, validation, retained values, CSRF, upload, success, responsive widths`);
+  console.log(`PASS (${mode}): native validation blocks POST, field states, server fallback, Enter submission, upload, success, responsive widths`);
 } finally {
   await command("Browser.close").catch(() => {});
   chrome.kill();

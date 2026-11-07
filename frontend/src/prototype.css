@@ -34,6 +34,14 @@
   color: var(--pf-t--global--text--color--status--danger--default);
 }
 
+/* Use the browser's constraint state after interaction. Untouched controls stay
+   neutral, and this client error styling clears as soon as the value is valid. */
+.pf-prototype .pf-v6-c-form-control:has(> :user-invalid) {
+  --pf-v6-c-form-control--after--BorderColor: var(--pf-v6-c-form-control--m-error--after--BorderColor);
+  --pf-v6-c-form-control--hover--after--BorderColor: var(--pf-v6-c-form-control--m-error--hover--after--BorderColor);
+  --pf-v6-c-form-control--after--BorderWidth: var(--pf-v6-c-form-control--m-error--after--BorderWidth);
+}
+
 .pf-prototype :focus-visible {
   outline: 2px solid var(--pf-t--global--color--brand--default);
   outline-offset: 3px;
