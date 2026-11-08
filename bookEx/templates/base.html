@@ -3,48 +3,65 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Simple Layout</title>
+    <title>{% block title %}Book Exchange{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{% static 'dist/main.css' %}">
     <script type="module" src="{% static 'dist/main.js' %}"></script>
 </head>
 <body>
+    <!-- Skip Link -->
+    <a class="skip-link" href="#main-content">Skip to main content</a>
 
     <!-- Top Banner -->
-    <header class="banner">
-        <h1>Website Banner</h1>
+    <header class="pf-v6-c-masthead" id="masthead">
+        <div class="pf-v6-c-masthead__main">
+            <span class="pf-v6-c-masthead__toggle">
+              <button
+                class="pf-v6-c-button pf-m-hamburger pf-m-plain"
+                type="button"
+                id="navigation-toggle"
+                aria-label="Toggle primary navigation"
+                aria-controls="primary-navigation"
+                aria-expanded="true"
+                hidden
+              >
+                <span class="pf-v6-c-button__icon">
+                  <svg
+                    viewBox="0 0 10 10"
+                    class="pf-v6-c-button--hamburger-icon pf-v6-svg"
+                    width="1em"
+                    height="1em"
+                    aria-hidden="true"
+                  >
+                    <path class="pf-v6-c-button--hamburger-icon--top" d="M1,1 L9,1" />
+                    <path class="pf-v6-c-button--hamburger-icon--middle" d="M1,5 L9,5" />
+                    <path
+                      class="pf-v6-c-button--hamburger-icon--arrow"
+                      d="M1,5 L1,5 L1,5"
+                    />
+                    <path class="pf-v6-c-button--hamburger-icon--bottom" d="M9,9 L1,9" />
+                  </svg>
+                </span>
+              </button>
+            </span>
+            <div class="pf-v6-c-masthead__brand">
+              <a class="pf-v6-c-masthead__logo" href="{% url 'index' %}">Book Exchange</a>
+            </div>
+        </div>
 
         <!-- User -->
-        <span style="float: right;">
-            {% if user.is_authenticated %}
-               {{ user.username}}
-               <form action="{% url 'logout' %}?next=/" method="post">
-                   <button type="submit">logout</button>
-                   {% csrf_token %}
-               </form>
-            {% else %}
-               Not Logged in <a href="{% url 'login' %}?next=/">login</a>
-            {% endif %}
-        </span>
+        <div class="pf-v6-c-masthead__content">
+            {% include "includes/account_actions.html" %}
+        </div>
     </header>
+
+    {% include "includes/navigation.html" %}
 
     <!-- Main Layout -->
     <div class="container">
 
-        <!-- Left Menu -->
-        <nav class="sidebar">
-            <ul>
-                {% block sidenav%}
-                    <li><a href="#home">Home</a></li>
-                    <li><a href="#about">About</a></li>
-                    <li><a href="#service">Service</a></li>
-                    <li><a href="#contact">Contact</a></li>
-
-                {% endblock sidenav %}
-            </ul>
-        </nav>
-
         <!-- Right Main Content -->
-        <main class="content">
+        <main id="main-content" tabindex="-1" class="content">
             {% block content %}
                <h1>Main Content</h1>
             {% endblock content %}
@@ -54,7 +71,8 @@
 
     <!-- Bottom Footer -->
     <footer class="footer">
-        <p>&copy; 2026 Your Company Name. All rights reserved.</p>
+        <p>&copy; {% now "Y" %} Book Exchange</p>
+        <a href="{% url 'index' %}">Back to Home</a>
     </footer>
 
 </body>

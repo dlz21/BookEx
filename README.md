@@ -10,13 +10,46 @@ The frontend build works, but the PatternFly migration is still in progress:
 
 - Login and post-book are the first PatternFly prototype: PF6 HTML/CSS cards,
   validation/success alerts, and native Django forms. Other pages still need migration.
-- `frontend/src/main.ts` imports prototype CSS and focuses the rendered error
-  summary. `frontend/src/main.css` retains legacy styling for remaining pages.
+- `frontend/src/main.ts` imports prototype/shell CSS, controls mobile navigation,
+  and focuses the rendered error summary. `frontend/src/main.css` retains legacy
+  styling for remaining page content.
 - `bookEx/templates/base.html` loads the generated CSS and JavaScript module.
+- The shared shell uses PF6 masthead, buttons, and primary navigation, with
+  account controls, current-page state, a skip link, main landmark, and footer.
 - `STATIC_ROOT` is configured and static collection works. A production
   application/static server is still not configured.
 - There is no Python dependency manifest yet. The setup below installs the
   currently used Django version; it does not lock transitive Python dependencies.
+
+## Shared shell
+
+`base.html` includes `includes/navigation.html` and
+`includes/account_actions.html` on every application page. Child templates supply
+`content` and may override `title`; they no longer supply a sidebar block.
+
+The `bookMng.context_processors.navigation` processor supplies `navigation_items`
+with `label`, `url`, and `current` fields. It preserves `MainMenu` records in primary
+key order, resolves their existing named destinations, and supplies the six standard
+destinations when the menu table is empty. Exact paths set `aria-current="page"`
+independently of query parameters; a thread marks Inbox with `aria-current="true"`
+as its containing section. Other links remain available without current-page styling.
+
+Account actions use Django's `user` and `request` context. Visitors get Log in and
+Register; signed-in users get their escaped username and a CSRF-protected logout
+POST returning Home. Login links retain the current URL as `next`, except on
+authentication pages. The footer uses the current year and a named Home link.
+
+`frontend/src/shell.css` imports PF6 masthead/navigation component styles and owns
+shared layout and focus styling. At widths up to 48rem, the masthead button toggles
+the same navigation list using `aria-controls` and `aria-expanded`. Native button
+keyboard behavior works, Escape returns focus to the toggle, and resizing preserves
+visible focus. Without JavaScript the toggle stays hidden and navigation stays
+expanded. The skip link becomes visible on focus and targets the main landmark.
+
+Validation: `npm run build` and `BOOKEX_BROWSER_TESTS=1 python manage.py test`
+passed on November 8, 2026 (16 server tests and two Chrome cases). Browser checks
+cover skip-link focus, mobile expansion/Escape/resize, active links, logout, and
+the existing form/upload journeys with and without JavaScript.
 
 ## Setup
 
@@ -39,8 +72,6 @@ dependencies:
 
 ```bash
 cd frontend
-nvm install
-nvm use
 npm ci
 npm run build
 cd ..

@@ -46,19 +46,3 @@
   outline: 2px solid var(--pf-t--global--color--brand--default);
   outline-offset: 3px;
 }
-
-/* The existing sidebar layout is still pending migration. Keep the prototype's
-   native controls usable while that shared shell is being replaced. */
-.content {
-  min-width: 0;
-}
-
-@media (max-width: 48rem) {
-  .container:has(.pf-prototype) {
-    flex-direction: column;
-  }
-
-  .container:has(.pf-prototype) > .sidebar {
-    width: 100%;
-  }
-}

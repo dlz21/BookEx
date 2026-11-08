@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -54,8 +55,9 @@ class NavigationRoutingTests(TestCase):
     def assert_messaging_links(self, response):
         self.assertEqual(response.status_code, 200)
         for label, route in (("Inbox", "inbox"), ("Compose Message", "compose_message")):
-            self.assertInHTML(
-                f'<a href="{reverse(route)}">{label}</a>', response.content.decode()
+            self.assertRegex(
+                response.content.decode(),
+                rf'<a\b[^>]*href="{re.escape(reverse(route))}"[^>]*>{label}</a>',
             )
 
     def test_anonymous_mybooks_redirects_to_login(self):
@@ -71,7 +73,7 @@ class NavigationRoutingTests(TestCase):
         response = self.client.get(reverse("mybooks"))
         self.assertQuerySetEqual(response.context["books"], [own])
 
-    def test_sidebar_links_work_from_home_compose_inbox_and_thread(self):
+    def test_navigation_links_work_from_home_compose_inbox_and_thread(self):
         self.assert_messaging_links(self.client.get(reverse("index")))
         self.client.force_login(self.user)
         thread = MessageThread.get_or_create_thread(self.user, self.other)
@@ -80,11 +82,57 @@ class NavigationRoutingTests(TestCase):
             with self.subTest(url=url):
                 self.assert_messaging_links(self.client.get(url))
 
-    def test_invalid_compose_preserves_sidebar(self):
+    def test_invalid_compose_preserves_navigation(self):
         self.client.force_login(self.user)
         for data in ({"body": "Missing recipient"}, {"user_id": self.other.pk, "body": ""}):
             with self.subTest(data=data):
                 self.assert_messaging_links(self.client.post(reverse("compose_message"), data))
+
+
+class SharedShellTests(TestCase):
+    def test_default_menu_and_landmarks_exist_on_home_and_auth_pages(self):
+        for route in ("index", "login", "register", "register-success"):
+            with self.subTest(route=route):
+                response = self.client.get(reverse(route))
+                self.assertEqual(len(response.context["navigation_items"]), 6)
+                self.assertContains(response, 'aria-label="Primary"', count=1)
+                self.assertContains(response, '<main id="main-content" tabindex="-1"', count=1)
+                self.assertContains(response, 'href="#main-content"', count=1)
+                self.assertContains(response, '<footer', count=1)
+                self.assertContains(response, '>Register</a>')
+                self.assertContains(response, '>Log in</a>')
+
+    def test_current_page_ignores_query_string_and_thread_marks_inbox(self):
+        user = get_user_model().objects.create_user(username="shell-user")
+        other = get_user_model().objects.create_user(username="shell-other")
+        self.client.force_login(user)
+        response = self.client.get(reverse("compose_message"), {"user_id": other.pk})
+        self.assertContains(response, 'href="/compose/" aria-current="page"')
+        thread = MessageThread.get_or_create_thread(user, other)
+        response = self.client.get(reverse("thread_detail", args=[thread.pk]))
+        self.assertContains(response, 'href="/inbox/" aria-current="true"')
+        self.assertNotContains(response, 'aria-current="page"')
+
+    def test_custom_menu_available_on_login_and_invalid_compose(self):
+        MainMenu.objects.create(item="Help & Support", link="help/")
+        for route in ("index", "login", "register"):
+            response = self.client.get(reverse(route))
+            self.assertContains(response, 'href="/help/">Help &amp; Support</a>')
+            self.assertEqual(len(response.context["navigation_items"]), 1)
+
+    def test_account_actions_escape_username_and_logout_requires_csrf_post(self):
+        user = get_user_model().objects.create_user(username="<shell-user>")
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(user)
+        response = client.get(reverse("index"))
+        self.assertContains(response, "Signed in as &lt;shell-user&gt;")
+        self.assertNotContains(response, '>Register</a>')
+        self.assertEqual(client.get(reverse("logout")).status_code, 405)
+        self.assertEqual(client.post(reverse("logout")).status_code, 403)
+        response = client.post(reverse("logout") + "?next=/", {
+            "csrfmiddlewaretoken": client.cookies["csrftoken"].value,
+        })
+        self.assertRedirects(response, reverse("index"))
 
 
 class PatternFlyFormTests(TestCase):

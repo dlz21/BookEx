@@ -100,6 +100,32 @@ try {
     assert.equal(formPosts, postsBefore, "Invalid fields must block the POST");
   };
 
+  await send("Emulation.setDeviceMetricsOverride", { width: 360, height: 900, deviceScaleFactor: 1, mobile: false });
+  await navigate("/");
+  await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
+  await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
+  assert.equal(await evaluate("document.activeElement.matches('.skip-link')"), true);
+  assert.equal(await evaluate("document.activeElement.getBoundingClientRect().top >= 0"), true);
+  await enter(".skip-link");
+  await until("document.activeElement.id === 'main-content'");
+  assert.equal(await evaluate("document.querySelector('#primary-navigation a[aria-current=page]').pathname"), "/");
+  if (mode === "js") {
+    await until("document.querySelector('#primary-navigation').hidden");
+    await enter("#navigation-toggle");
+    assert.equal(await evaluate("document.querySelector('#navigation-toggle').getAttribute('aria-expanded')"), "true");
+    await evaluate("document.querySelector('#primary-navigation a').focus()");
+    await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
+    await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
+    assert.equal(await evaluate("document.activeElement.id"), "navigation-toggle");
+    assert.equal(await evaluate("document.querySelector('#primary-navigation').hidden"), true);
+    await send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
+    await until("document.querySelector('#navigation-toggle').hidden && !document.querySelector('#primary-navigation').hidden");
+    assert.equal(await evaluate("document.activeElement.matches('#primary-navigation a')"), true);
+  } else {
+    assert.equal(await evaluate("document.querySelector('#navigation-toggle').hidden"), true);
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('#primary-navigation')).display !== 'none'"), true);
+  }
+
   await navigate("/login/?next=/postbook");
   assert.equal(await evaluate("document.querySelector('#id_password').type"), "password");
   await until("getComputedStyle(document.querySelector('.pf-v6-c-card')).borderRadius !== '0px'");
@@ -147,9 +173,13 @@ try {
   await enter("#id_price");
   await until("location.search === '?submitted=True' && !!document.querySelector('[role=status]')");
   assert.equal(await evaluate("document.querySelector('[role=status]').textContent.includes('Book posted successfully!')"), true);
+  assert.equal(await evaluate("document.querySelector('.account-actions').textContent.includes('Signed in as prototype')"), true);
+  assert.equal(await evaluate("document.querySelector('#primary-navigation a[aria-current=page]').pathname"), "/postbook");
+  await enter(".account-actions button");
+  await until("location.pathname === '/' && !!document.querySelector('.account-actions a[href=\"/register\"]')");
   assert.deepEqual(runtimeErrors, []);
   assert.deepEqual(networkErrors, []);
-  console.log(`PASS (${mode}): native validation blocks POST, field states, server fallback, Enter submission, upload, success, responsive widths`);
+  console.log(`PASS (${mode}): skip link, mobile navigation, active page, logout, native validation, server fallback, upload, responsive widths`);
 } finally {
   await command("Browser.close").catch(() => {});
   chrome.kill();
