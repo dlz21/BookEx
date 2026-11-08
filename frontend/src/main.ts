@@ -1,5 +1,6 @@
 import "./prototype.css";
 import "./shell.css";
+import "./book-list.css";
 
 const navigationToggle = document.querySelector<HTMLButtonElement>("#navigation-toggle");
 const navigation = document.querySelector<HTMLElement>("#primary-navigation");

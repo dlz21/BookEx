@@ -175,11 +175,27 @@ try {
   assert.equal(await evaluate("document.querySelector('[role=status]').textContent.includes('Book posted successfully!')"), true);
   assert.equal(await evaluate("document.querySelector('.account-actions').textContent.includes('Signed in as prototype')"), true);
   assert.equal(await evaluate("document.querySelector('#primary-navigation a[aria-current=page]').pathname"), "/postbook");
+  await navigate("/displaybooks");
+  assert.equal(await evaluate("document.querySelectorAll('#table-striped tbody tr').length"), 2);
+  for (const width of [360, 768, 1280]) {
+    await send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: false });
+    await until("document.documentElement.scrollWidth <= innerWidth");
+    const narrow = width < 1280;
+    await until(`(getComputedStyle(document.querySelector('#table-striped thead')).display === 'none') === ${narrow}`);
+    assert.equal(await evaluate(`(() => {
+      const [odd, even] = document.querySelectorAll('#table-striped tbody tr');
+      return getComputedStyle(odd).backgroundColor !== getComputedStyle(even).backgroundColor;
+    })()`), true, "Alternating rows must have different backgrounds");
+    if (narrow) {
+      assert.equal(await evaluate("getComputedStyle(document.querySelector('[data-label=\"Posted Date\"]'), '::before').content"), '"Posted Date"');
+    }
+  }
+  assert.equal(await evaluate("[...document.querySelectorAll('#table-striped tbody a')].every(a => a.pathname.startsWith('/book_detail/'))"), true);
   await enter(".account-actions button");
   await until("location.pathname === '/' && !!document.querySelector('.account-actions a[href=\"/register\"]')");
   assert.deepEqual(runtimeErrors, []);
   assert.deepEqual(networkErrors, []);
-  console.log(`PASS (${mode}): skip link, mobile navigation, active page, logout, native validation, server fallback, upload, responsive widths`);
+  console.log(`PASS (${mode}): shell, native forms/upload, striped table, responsive labels and long titles at 360/768/1280px`);
 } finally {
   await command("Browser.close").catch(() => {});
   chrome.kill();

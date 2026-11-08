@@ -210,7 +210,11 @@ class PatternFlyBrowserTests(StaticLiveServerTestCase):
         self.assertTrue(chrome, "Install Chrome/Chromium or set CHROME_BIN")
         self.assertTrue(shutil.which("node"), "Node is required for browser checks")
         self.assertTrue((settings.BASE_DIR / "bookEx/static/dist/main.css").exists(), "Run npm run build first")
-        get_user_model().objects.create_user(username="prototype", password="Test-password-293!")
+        user = get_user_model().objects.create_user(username="prototype", password="Test-password-293!")
+        Book.objects.create(
+            name="Long title " + "x" * 180, price="1.00", username=user,
+            picture="bookEx/static/uploads/table-fixture.gif",
+        )
         with TemporaryDirectory() as media, override_settings(MEDIA_ROOT=media):
             image = Path(media) / "browser-cover.gif"
             image.write_bytes(b"GIF89a")
@@ -220,7 +224,7 @@ class PatternFlyBrowserTests(StaticLiveServerTestCase):
                 capture_output=True, text=True, timeout=60,
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            book = Book.objects.get()
+            book = Book.objects.get(name="Browser prototype")
             self.assertEqual(book.name, "Browser prototype")
             self.assertEqual(book.username.username, "prototype")
             self.assertTrue(Path(book.picture.path).is_relative_to(Path(media)))
