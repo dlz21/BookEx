@@ -1,48 +1,44 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% block title %} {{book.name}} | Book Exchange{% endblock %}
+
 {% block content %}
-   <h1>Book Detail</h1>
-   <table border="2" >
-      <tr>
-          <th>
-              Book Picture
-          </th>
-          <th>
-              Book Name
-          </th>
-          <th>
-              Book Price
-          </th>
-          <th>
-              User Name
-          </th>
-          <th>
-              Book Post Date
-          </th>
-          <th>
-              Book Web
-          </th>
-      </tr>
-       <tr>
-           <td>
-           <img src="{% static book.pic_path %}" width="100" />
-         </td>
-         <td>
-            {{ book.name }}
-         </td>
-         <td>
-            {{ book.price }}
-         </td>
-          <td>
-            {{ book.username }}
-         </td>
-           <td>
-            {{ book.publishdate }}
-         </td>
-           <td>
-               {{ book.web }}
-           </td>
-      </tr>
-   </table>
+
+  <section class="book-list pf-v6-c-card" aria-labelledby="bookdetail-title">
+    <div class="pf-v6-c-card__title"><h1 id="bookdetail-title">My Books</h1></div>
+    <div class="pf-v6-c-card__body">
+      <table
+        class="pf-v6-c-table pf-m-grid-md pf-m-striped pf-m-break-word"
+        role="table"
+        aria-labelledby="bookdetail-title"
+        id="table-striped"
+      >
+        <thead class="pf-v6-c-table__thead">
+          <tr class="pf-v6-c-table__tr" role="row">
+            <th class="pf-v6-c-table__th" role="columnheader" scope="col">Image</th>
+            <th class="pf-v6-c-table__th" role="columnheader" scope="col">Title</th>
+            <th class="pf-v6-c-table__th" role="columnheader" scope="col">Price</th>
+            <th class="pf-v6-c-table__th" role="columnheader" scope="col">Username</th>
+            <th class="pf-v6-c-table__th" role="columnheader" scope="col">Posted Date</th>
+            <th class="pf-v6-c-table__th" role="columnheader" scope="col">Web</th>
+          </tr>
+        </thead>
+
+        <tbody class="pf-v6-c-table__tbody" role="rowgroup">
+            <tr class="pf-v6-c-table__tr" role="row">
+              <td class="pf-v6-c-table__td" role="cell" data-label="Image">
+                <img src="{% static book.pic_path %}" width="100" />
+              </td>
+              <td class="pf-v6-c-table__td" role="cell" data-label="Title">{{book.name}}</td>
+              <td class="pf-v6-c-table__td" role="cell" data-label="Price">{{book.price}}</td>
+              <td class="pf-v6-c-table__td" role="cell" data-label="Username">{{book.username}}</td>
+              <td class="pf-v6-c-table__td" role="cell" data-label="Posted Date">{{book.publishdate}}</td>
+              <td class="pf-v6-c-table__td" role="cell" data-label="Web">{{book.web}}</td>
+            </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </section>
 {% endblock content %}
