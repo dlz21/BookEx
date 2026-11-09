@@ -1,33 +1,12 @@
-
 {% extends "base.html" %}
-{% load static %}
-
+{% block title %}Compose message | Book Exchange{% endblock %}
 {% block content %}
-<div class="message-box-container">
-    <div class="message-box-header">
-        <div>
-            <h1>Compose Message</h1>
-            <a class="back-link" href="{% url 'inbox' %}">← Back to Inbox</a>
-        </div>
-    </div>
-
-    <form method="post" class="message-compose-form compose-page-form">
-        {% csrf_token %}
-
-        <label for="id_user_id">Recipient</label>
-        <select id="id_user_id" name="user_id" required>
-            <option value="">Select a user</option>
-            {% for user in available_users %}
-                <option value="{{ user.id }}" {% if selected_user and selected_user.id == user.id %}selected{% endif %}>
-                    {{ user.username }}
-                </option>
-            {% endfor %}
-        </select>
-
-        <label for="id_body">Message</label>
-        <textarea id="id_body" name="body" rows="7" placeholder="Write your message here..." required></textarea>
-
-        <button class="btn-primary" type="submit">Send</button>
-    </form>
-</div>
+<section class="messaging-page pf-prototype pf-v6-c-card" aria-labelledby="compose-title">
+  <div class="pf-v6-c-card__title"><h1 id="compose-title">Compose message</h1></div>
+  <div class="pf-v6-c-card__body">
+    <a href="{% url 'inbox' %}">Back to Inbox</a>
+    {% url 'compose_message' as compose_url %}
+    {% include "includes/message_form.html" with action_url=compose_url submit_label="Send message" %}
+  </div>
+</section>
 {% endblock %}

@@ -5,7 +5,7 @@ from django.urls import reverse_lazy
 from django.views.generic.edit import CreateView
 
 from .models import MainMenu, Book
-from .forms import BookForm
+from .forms import BookForm, ComposeMessageForm, ReplyForm
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
@@ -153,18 +153,12 @@ def thread_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
     if not thread.has_participant(request.user):
         raise Http404("Message thread not found.")
 
-    if request.method == "POST":
-        body = request.POST.get("body", "").strip()
-        if not body:
-            messages.error(request, "Message body cannot be empty.")
-            return redirect("thread_detail", thread_id=thread.id)
-
-        recipient = thread.other_user(request.user)
+    form = ReplyForm(request.POST if request.method == "POST" else None)
+    form.fields["body"].label = "Reply"
+    if request.method == "POST" and form.is_valid():
         PrivateMessage.objects.create(
-            thread=thread,
-            sender=request.user,
-            recipient=recipient,
-            body=body,
+            thread=thread, sender=request.user,
+            recipient=thread.other_user(request.user), body=form.cleaned_data["body"],
         )
         thread.save(update_fields=["updated_at"])
         messages.success(request, "Message sent.")
@@ -173,13 +167,15 @@ def thread_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
     thread_messages = thread.messages.select_related("sender", "recipient").all()
 
     unread_messages = thread_messages.filter(recipient=request.user, is_read=False)
-    for msg in unread_messages:
-        msg.mark_as_read()
+    if request.method == "GET":
+        for msg in unread_messages:
+            msg.mark_as_read()
 
     context = {
         "thread": thread,
         "other_user": thread.other_user(request.user),
         "thread_messages": thread_messages,
+        "form": form,
         'item_list': MainMenu.objects.all(),
     }
     return render(request, "bookMng/thread.html", context)
@@ -187,69 +183,36 @@ def thread_detail(request: HttpRequest, thread_id: int) -> HttpResponse:
 @login_required
 @require_http_methods(["GET", "POST"])
 def compose_message(request: HttpRequest) -> HttpResponse:
-    user_id = request.GET.get("user_id") or request.POST.get("user_id")
-    selected_user = None
-
-    if user_id:
-        selected_user = get_object_or_404(User, pk=user_id)
+    initial = {}
+    if request.method == "GET" and request.GET.get("user_id"):
+        try:
+            selected_id = int(request.GET["user_id"])
+        except ValueError:
+            raise Http404("Recipient not found.")
+        selected_user = get_object_or_404(User, pk=selected_id)
         if selected_user == request.user:
             messages.error(request, "You cannot send a message to yourself.")
             return redirect("inbox")
+        initial["user_id"] = selected_user
 
-    available_users = User.objects.exclude(pk=request.user.pk).order_by("username")
-
-    if request.method == "POST":
-        body = request.POST.get("body", "").strip()
-        target_user_id = request.POST.get("user_id")
-
-        if not target_user_id:
-            messages.error(request, "Please choose a recipient.")
-            return render(
-                request,
-                "bookMng/compose.html",
-                {
-                    "available_users": available_users,
-                    "selected_user": selected_user,
-                    "item_list": MainMenu.objects.all(),
-                },
-            )
-
-        recipient = get_object_or_404(User, pk=target_user_id)
-
-        if recipient == request.user:
-            messages.error(request, "You cannot send a message to yourself.")
-            return redirect("compose_message")
-
-        if not body:
-            messages.error(request, "Message body cannot be empty.")
-            return render(
-                request,
-                "bookMng/compose.html",
-                {
-                    "available_users": available_users,
-                    "selected_user": recipient,
-                    "item_list": MainMenu.objects.all(),
-                },
-            )
-
+    form = ComposeMessageForm(
+        request.POST if request.method == "POST" else None,
+        user=request.user, initial=initial,
+    )
+    if request.method == "POST" and form.is_valid():
+        recipient = form.cleaned_data["user_id"]
         thread = MessageThread.get_or_create_thread(request.user, recipient)
         PrivateMessage.objects.create(
-            thread=thread,
-            sender=request.user,
-            recipient=recipient,
-            body=body,
+            thread=thread, sender=request.user, recipient=recipient,
+            body=form.cleaned_data["body"],
         )
         thread.save(update_fields=["updated_at"])
-
         messages.success(request, f"Message sent to {recipient.username}.")
         return redirect("thread_detail", thread_id=thread.id)
 
-    context = {
-        "available_users": available_users,
-        "selected_user": selected_user,
-        'item_list': MainMenu.objects.all(),
-    }
-    return render(request, "bookMng/compose.html", context)
+    return render(request, "bookMng/compose.html", {
+        "form": form, "item_list": MainMenu.objects.all(),
+    })
 
 
 @login_required
@@ -265,4 +228,4 @@ def mark_thread_read(request: HttpRequest, thread_id: int) -> HttpResponse:
         msg.mark_as_read()
 
     messages.success(request, "Thread marked as read.")
-    return redirect("messagingbox:thread_detail", thread_id=thread.id)
+    return redirect("thread_detail", thread_id=thread.id)

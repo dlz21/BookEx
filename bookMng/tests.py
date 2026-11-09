@@ -13,7 +13,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from .models import Book, MainMenu, MessageThread
+from .models import Book, MainMenu, MessageThread, PrivateMessage
 
 
 class MessagingLoginRedirectTests(TestCase):
@@ -118,7 +118,21 @@ class SharedShellTests(TestCase):
         for route in ("index", "login", "register"):
             response = self.client.get(reverse(route))
             self.assertContains(response, 'href="/help/">Help &amp; Support</a>')
-            self.assertEqual(len(response.context["navigation_items"]), 1)
+            self.assertEqual(len(response.context["navigation_items"]), 2)
+
+    def test_home_is_first_once_regardless_of_database_order_or_omission(self):
+        MainMenu.objects.create(item="Inbox", link="inbox/")
+        self.assertEqual(
+            [item["label"] for item in self.client.get(reverse("index")).context["navigation_items"]],
+            ["Home", "Inbox"],
+        )
+        MainMenu.objects.create(item="Home", link="/")
+        MainMenu.objects.create(item="Home alias", link="")
+        for route in ("index", "login", "register"):
+            with self.subTest(route=route):
+                items = self.client.get(reverse(route)).context["navigation_items"]
+                self.assertEqual([item["label"] for item in items], ["Home", "Inbox"])
+                self.assertEqual(items[0]["url"], reverse("index"))
 
     def test_account_actions_escape_username_and_logout_requires_csrf_post(self):
         user = get_user_model().objects.create_user(username="<shell-user>")
@@ -211,6 +225,12 @@ class PatternFlyBrowserTests(StaticLiveServerTestCase):
         self.assertTrue(shutil.which("node"), "Node is required for browser checks")
         self.assertTrue((settings.BASE_DIR / "bookEx/static/dist/main.css").exists(), "Run npm run build first")
         user = get_user_model().objects.create_user(username="prototype", password="Test-password-293!")
+        recipient = get_user_model().objects.create_user(username="recipient-" + "x" * 100)
+        thread = MessageThread.get_or_create_thread(user, recipient)
+        PrivateMessage.objects.create(
+            thread=thread, sender=recipient, recipient=user,
+            body="Incoming message\n" + "x" * 500 + "\n<script>escaped</script>",
+        )
         Book.objects.create(
             name="Long title " + "x" * 180, price="1.00", username=user,
             picture="bookEx/static/uploads/table-fixture.gif",

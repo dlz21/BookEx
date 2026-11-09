@@ -21,6 +21,12 @@ def navigation(request):
                 ("Inbox", "inbox"),
             )
         ]
+    # Home is a shell destination, even when custom menu records omit it.
+    # Identify it by resolved URL so legacy aliases cannot produce duplicates.
+    home_url = reverse("index")
+    items = [{"label": "Home", "url": home_url}] + [
+        item for item in items if item["url"] != home_url
+    ]
     route = request.resolver_match.url_name if request.resolver_match else None
     for item in items:
         item["current"] = "page" if item["url"] == request.path else ""

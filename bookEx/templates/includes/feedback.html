@@ -1,0 +1,5 @@
+{% for message in messages %}
+<div class="app-feedback pf-v6-c-alert pf-m-inline {% if message.level >= 40 %}pf-m-danger{% elif message.level >= 30 %}pf-m-warning{% elif message.level >= 25 %}pf-m-success{% else %}pf-m-info{% endif %}" role="{% if message.level >= 30 %}alert{% else %}status{% endif %}">
+  <h2 class="pf-v6-c-alert__title">{{ message }}</h2>
+</div>
+{% endfor %}

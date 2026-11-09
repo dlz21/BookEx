@@ -9,10 +9,11 @@ assets; it is not required to run Django after those assets have been delivered.
 The frontend build works, but the PatternFly migration is still in progress:
 
 - Login and post-book are the first PatternFly prototype: PF6 HTML/CSS cards,
-  validation/success alerts, and native Django forms. Other pages still need migration.
-- `frontend/src/main.ts` imports prototype/shell CSS, controls mobile navigation,
-  and focuses the rendered error summary. `frontend/src/main.css` retains legacy
-  styling for remaining page content.
+  validation/success alerts, and native Django forms. Registration and messaging
+  now reuse those patterns; book pages have partial PF migrations.
+- `frontend/src/main.ts` imports prototype/shell/book-list/messaging CSS, controls
+  mobile navigation, and focuses rendered error summaries. `frontend/src/main.css`
+  is reserved for overrides and is also imported by the build entry.
 - `bookEx/templates/base.html` loads the generated CSS and JavaScript module.
 - The shared shell uses PF6 masthead, buttons, and primary navigation, with
   account controls, current-page state, a skip link, main landmark, and footer.
@@ -28,16 +29,18 @@ The frontend build works, but the PatternFly migration is still in progress:
 `content` and may override `title`; they no longer supply a sidebar block.
 
 The `bookMng.context_processors.navigation` processor supplies `navigation_items`
-with `label`, `url`, and `current` fields. It preserves `MainMenu` records in primary
-key order, resolves their existing named destinations, and supplies the six standard
-destinations when the menu table is empty. Exact paths set `aria-current="page"`
+with `label`, `url`, and `current` fields. Home is always first and appears once;
+records resolving to the Home URL are replaced by that canonical entry. Other
+`MainMenu` records retain primary key order. It resolves their existing named
+destinations and supplies the six standard destinations when the menu table is
+empty. Exact paths set `aria-current="page"`
 independently of query parameters; a thread marks Inbox with `aria-current="true"`
 as its containing section. Other links remain available without current-page styling.
 
 Account actions use Django's `user` and `request` context. Visitors get Log in and
 Register; signed-in users get their escaped username and a CSRF-protected logout
 POST returning Home. Login links retain the current URL as `next`, except on
-authentication pages. The footer uses the current year and a named Home link.
+authentication pages. The footer uses the current year.
 
 `frontend/src/shell.css` imports PF6 masthead/navigation component styles and owns
 shared layout and focus styling. At widths up to 48rem, the masthead button toggles
@@ -50,6 +53,45 @@ Validation: `npm run build` and `BOOKEX_BROWSER_TESTS=1 python manage.py test`
 passed on November 8, 2026 (16 server tests and two Chrome cases). Browser checks
 cover skip-link focus, mobile expansion/Escape/resize, active links, logout, and
 the existing form/upload journeys with and without JavaScript.
+
+## Messaging patterns
+
+Inbox uses PF6 conversation cards and unread badges; thread messages use an
+ordered list of PF6 cards with sender names and machine-readable timestamps.
+`frontend/src/messaging.css` adds page layout, wrapping, and preserved message
+line breaks. All text stays Django-escaped, including usernames and message bodies.
+
+`includes/message_form.html` takes a bound `form`, a named-route `action_url`,
+and a `submit_label`. It supplies CSRF and delegates labels, help, error summaries,
+and native controls to `includes/form_fields.html`. `ComposeMessageForm` keeps
+the existing `user_id` and `body` field names; `ReplyForm` uses `body`. Recipients
+exclude the current user. `?user_id=` preselects the recipient on GET; POST uses
+the submitted recipient. Invalid submissions retain entered values and render
+linked field errors. Textarea Enter inserts a newline; the submit button sends.
+Forms and all messaging actions work without page JavaScript.
+
+`includes/feedback.html` consumes Django `messages` once in the base template.
+It maps severity to PF6 inline alerts, using `role="alert"` for errors/warnings
+and `role="status"` for informational/success feedback. Form validation uses
+the shared form error summary instead of enqueueing duplicate Django messages.
+Thread GET marks only incoming unread messages read. The explicit CSRF-protected
+mark-read POST redirects to the named `thread_detail` route. Thread GET/reply/read
+remain participant-only; inbox remains scoped to the signed-in user's threads.
+
+These field and feedback includes can support future comment forms; card
+sender/time and multiline text patterns can support comment display. Future
+comments must define their own permissions rather than reuse private-thread access.
+Ratings and favorites still need their product rules and models/routes; no new
+feature destinations or widgets are added here.
+
+Messaging verification (November 8, 2026): nine isolated server cases in
+`bookMng/test_messaging.py` cover empty/populated inbox, ordering, unread/read
+timestamps, compose validation and preselection, retained input, escaped output,
+send/reply, feedback consumption, participant authorization, and CSRF rejection.
+Both opt-in Chrome cases additionally exercise inbox/compose/thread/reply/read,
+textarea Enter, error focus, native controls, and long content at
+360/768/1280px with JavaScript enabled and disabled. Full accessibility scanning,
+200% zoom, and production static serving remain unverified.
 
 ## Setup
 
@@ -250,13 +292,13 @@ python manage.py test
 python manage.py findstatic dist/main.js dist/main.css --verbosity 2
 ```
 
-As of November 7, 2026, build/typecheck and Django checks pass. Twelve Django
+As of November 8, 2026, build/typecheck and Django checks pass. Twenty-six Django
 regression tests cover login/`next`, anonymous messaging/My Books redirects,
 owner-filtered My Books, sidebar navigation from nested routes and invalid compose
 responses, invalid credentials, protected posting, linked validation errors/escaping,
 CSRF rejection, and upload/success with isolated storage. Two opt-in Chrome checks exercise actual native Enter-key submission,
-password input, invalid forms, upload, responsive widths, and success with page
-JavaScript enabled and disabled. These checks passed; the rest of the application
+password input, invalid forms, upload, responsive book tables, messaging, and success
+with page JavaScript enabled and disabled. These checks passed; the rest of the application
 still needs regression and accessibility coverage.
 
 Build first, then run browser checks from the root:
@@ -271,7 +313,7 @@ needed. It uses Django's temporary live server/database, temporary uploads, and
 a temporary headless browser profile. Local sockets and browser execution must
 be permitted. No Playwright dependency or running development server is required.
 Default `python manage.py test` skips these two browser cases; it still runs the
-twelve server regression cases.
+26 server regression cases, including the messaging coverage described above.
 
 To try the prototype manually, run Django and visit `/login/?next=/postbook`.
 Submit empty fields to see native browser popovers such as “Please fill out this

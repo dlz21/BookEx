@@ -1,54 +1,34 @@
 {% extends "base.html" %}
-{% load static %}
-
+{% block title %}Inbox | Book Exchange{% endblock %}
 {% block content %}
-<div class="message-box-container">
-    <div class="message-box-header">
-        <h1>Inbox</h1>
-        <a class="btn-primary" href="{% url 'compose_message' %}">New Message</a>
-    </div>
-
-    {% if thread_data %}
-        <div class="thread-list">
-            {% for item in thread_data %}
-                <a class="thread-card" href="{% url 'thread_detail' item.thread.id %}">
-                    <div class="thread-card-top">
-                        <span class="thread-username">{{ item.other_user.username }}</span>
-                        {% if item.latest_message %}
-                            <span class="thread-time">{{ item.latest_message.created_at|date:"M d, Y H:i" }}</span>
-                        {% endif %}
-                    </div>
-
-                    <div class="thread-card-body">
-                        {% if item.latest_message %}
-                            <p>
-                                <strong>
-                                    {% if item.latest_message.sender == request.user %}
-                                        You:
-                                    {% else %}
-                                        {{ item.other_user.username }}:
-                                    {% endif %}
-                                </strong>
-                                {{ item.latest_message.body|truncatechars:90 }}
-                            </p>
-                        {% else %}
-                            <p>No messages yet.</p>
-                        {% endif %}
-                    </div>
-
-                    {% if item.unread_count > 0 %}
-                        <div class="thread-unread-badge">
-                            {{ item.unread_count }} unread
-                        </div>
-                    {% endif %}
-                </a>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="empty-state">
-            <p>You have no conversations yet.</p>
-            <a class="btn-primary" href="{% url 'compose_message' %}">Start a Conversation</a>
-        </div>
-    {% endif %}
-</div>
+<section class="messaging-page" aria-labelledby="inbox-title">
+  <div class="messaging-header">
+    <h1 id="inbox-title">Inbox</h1>
+    <a class="pf-v6-c-button pf-m-primary" href="{% url 'compose_message' %}">New message</a>
+  </div>
+  <ul class="conversation-list" aria-label="Conversations">
+    {% for item in thread_data %}
+    <li class="pf-v6-c-card">
+      <div class="pf-v6-c-card__title messaging-header">
+        <h2><a href="{% url 'thread_detail' item.thread.id %}">Conversation with {{ item.other_user.username }}</a></h2>
+        {% if item.unread_count %}<span class="pf-v6-c-badge pf-m-unread">{{ item.unread_count }} unread</span>{% endif %}
+      </div>
+      <div class="pf-v6-c-card__body">
+        {% if item.latest_message %}
+          <time datetime="{{ item.latest_message.created_at|date:'c' }}">{{ item.latest_message.created_at|date:"M d, Y H:i" }}</time>
+          <p><strong>{% if item.latest_message.sender == request.user %}You{% else %}{{ item.other_user.username }}{% endif %}:</strong> {{ item.latest_message.body|truncatechars:90 }}</p>
+        {% else %}<p>No messages yet.</p>{% endif %}
+      </div>
+    </li>
+    {% empty %}
+    <li class="pf-v6-c-card">
+      <div class="pf-v6-c-card__body">
+        <h2>No conversations yet</h2>
+        <p>Send a message to start a conversation with another member.</p>
+        <a class="pf-v6-c-button pf-m-secondary" href="{% url 'compose_message' %}">Start a conversation</a>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
 {% endblock %}

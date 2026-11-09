@@ -191,11 +191,70 @@ try {
     }
   }
   assert.equal(await evaluate("[...document.querySelectorAll('#table-striped tbody a')].every(a => a.pathname.startsWith('/book_detail/'))"), true);
+
+  // Messaging submits native controls in both JS modes against isolated data.
+  const responsiveMessaging = async () => {
+    for (const width of [360, 768, 1280]) {
+      await send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: false });
+      await until("document.documentElement.scrollWidth <= innerWidth");
+      assert.equal(await evaluate("getComputedStyle(document.querySelector('.pf-v6-c-card')).borderRadius !== '0px'"), true);
+    }
+  };
+  await navigate("/inbox/");
+  assert.equal(await evaluate("document.querySelector('.pf-v6-c-badge').textContent"), "1 unread");
+  await responsiveMessaging();
+  const threadPath = await evaluate("document.querySelector('.conversation-list h2 a').pathname");
+  await navigate(threadPath);
+  assert.equal(await evaluate("document.querySelector('.message-body').textContent.includes('<script>escaped</script>')"), true);
+  assert.equal(await evaluate("document.querySelector('.message-body script') === null"), true);
+  assert.equal(await evaluate("getComputedStyle(document.querySelector('.message-body')).whiteSpace"), "pre-wrap");
+  await responsiveMessaging();
+  await navigate("/inbox/");
+  assert.equal(await evaluate("document.querySelector('.pf-v6-c-badge') === null"), true);
+  await navigate("/compose/");
+  await responsiveMessaging();
+  await fill("#id_body", "Retained message\n<script>plain text</script>");
+  // Bypass native required once to exercise the server's bound form feedback.
+  await evaluate("document.querySelector('form.pf-v6-c-form').noValidate = true");
+  await enter("form.pf-v6-c-form button");
+  await until("!!document.querySelector('[data-form-errors]')");
+  assert.equal(await evaluate("document.querySelector('#id_body').value"), "Retained message\n<script>plain text</script>");
+  assert.equal(await evaluate("document.querySelector('#id_user_id').getAttribute('aria-invalid')"), "true");
+  if (mode === "js") await until("document.activeElement.hasAttribute('data-form-errors')");
+  const recipientId = await evaluate("document.querySelector('#id_user_id option:nth-child(2)').value");
+  await navigate(`/compose/?user_id=${recipientId}`);
+  assert.equal(await evaluate("document.querySelector('#id_user_id').value"), recipientId);
+  await fill("#id_body", "Browser message");
+  const postsBeforeNewline = formPosts;
+  await evaluate("document.querySelector('#id_body').focus(); document.querySelector('#id_body').setSelectionRange(15, 15)");
+  await enter("#id_body");
+  assert.equal(await evaluate("document.querySelector('#id_body').value"), "Browser message\n");
+  assert.equal(formPosts, postsBeforeNewline, "Textarea Enter must insert a newline without sending");
+  await fill("#id_body", "Browser message\nSecond line");
+  await enter("form.pf-v6-c-form button");
+  await until("location.pathname.startsWith('/thread/') && !!document.querySelector('[role=status]')");
+  assert.equal(await evaluate("document.querySelectorAll('[role=status]').length"), 1);
+  assert.equal(await evaluate("document.querySelector('.conversation-list').textContent.includes('Browser message\\nSecond line')"), true);
+  assert.equal(await evaluate("document.querySelector('#primary-navigation a[aria-current=true]').pathname"), "/inbox/");
+  await fill("#id_body", "   ");
+  await enter("form.pf-v6-c-form button");
+  await until("!!document.querySelector('[data-form-errors]')");
+  assert.equal(await evaluate("document.querySelector('#id_body').value"), "   ");
+  await fill("#id_body", "Browser reply\nSecond line");
+  await enter("form.pf-v6-c-form button");
+  await until("!!document.querySelector('[role=status]') && document.querySelector('#id_body').value === ''");
+  assert.equal(await evaluate("document.querySelector('[role=status]').textContent.includes('Message sent.')"), true);
+  await enter("form[action$='/mark-read/'] button");
+  await until("!!document.querySelector('[role=status]') && document.querySelector('[role=status]').textContent.includes('Thread marked as read.')");
+  assert.equal(await evaluate("document.querySelectorAll('[role=status]').length"), 1);
+  await responsiveMessaging();
+  await navigate(threadPath);
+  assert.equal(await evaluate("document.querySelector('[role=status]') === null"), true);
   await enter(".account-actions button");
   await until("location.pathname === '/' && !!document.querySelector('.account-actions a[href=\"/register\"]')");
   assert.deepEqual(runtimeErrors, []);
   assert.deepEqual(networkErrors, []);
-  console.log(`PASS (${mode}): shell, native forms/upload, striped table, responsive labels and long titles at 360/768/1280px`);
+  console.log(`PASS (${mode}): shell, forms/upload, book tables, messaging validation/send/reply/read, responsive content at 360/768/1280px`);
 } finally {
   await command("Browser.close").catch(() => {});
   chrome.kill();

@@ -1,0 +1,46 @@
+@import "@patternfly/patternfly/components/Badge/badge.css";
+
+/* Page geometry only; PF cards, badges, forms, buttons and alerts own visuals. */
+.messaging-page {
+  width: 100%;
+  max-width: 60rem;
+  min-width: 0;
+  margin-inline: auto;
+  overflow-wrap: anywhere;
+}
+
+.messaging-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pf-t--global--spacer--md);
+}
+
+.messaging-header > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.conversation-list {
+  display: grid;
+  gap: var(--pf-t--global--spacer--md);
+  padding: 0;
+  list-style: none;
+}
+
+.message-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.app-feedback {
+  margin-block-end: var(--pf-t--global--spacer--md);
+  overflow-wrap: anywhere;
+}
+
+.messaging-page select,
+.messaging-page textarea {
+  min-width: 0;
+  max-width: 100%;
+}
