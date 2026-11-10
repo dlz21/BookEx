@@ -1,24 +1,18 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block sidenav %}
-      <li>
-        <a href="/">  Home </a>
-      </li>
-{% endblock sidenav %}
-
 {% block content %}
-  <h1>User Registration</h1>
-    <form action="" method="post">
-      <table>
-         {{ form.as_table }}
-          <tr>
-             <td>
-                 <input type="submit" value="Submit">
-             </td>
-          </tr>
-      </table>
-      <input type="hidden" name="next" value="{{ next }}" />
-      {% csrf_token %}
-     </form>
+  <section class="pf-prototype pf-v6-c-card" aria-labelledby="registration-title">
+    <div class="pf-v6-c-card__title"><h1 id="registration-title">User Registration</h1></div>
+    <div class="pf-v6-c-card__body">
+      <form class="pf-v6-c-form" action="" method="post">
+        {% csrf_token %}
+        {% include "includes/form_fields.html" %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <div class="pf-v6-c-form__group pf-m-action">
+          <button class="pf-v6-c-button pf-m-primary" type="submit">Register</button>
+        </div>
+      </form>
+    </div>
+  </section>
 {% endblock content %}

@@ -1,49 +1,36 @@
 {% extends "base.html" %}
-{% load static %}
-
-{% block sidenav %}
-   {% for item in item_list %}
-      <li>
-        <a href="{{ item.link }}">  {{ item.item }} </a>
-      </li>
-   {% endfor %}
-{% endblock sidenav %}
-
+{% block title %}Conversation with {{ other_user.username }} | Book Exchange{% endblock %}
 {% block content %}
-<div class="message-box-container">
-    <div class="message-box-header">
-        <div>
-            <h1>Conversation with {{ other_user.username }}</h1>
-            <a class="back-link" href="{% url 'inbox' %}">← Back to Inbox</a>
-        </div>
-
-        <form method="post" action="{% url 'mark_thread_read' thread.id %}">
-            {% csrf_token %}
-            <button class="btn-secondary" type="submit">Mark Read</button>
-        </form>
+<section class="messaging-page" aria-labelledby="thread-title">
+  <div class="messaging-header">
+    <div>
+      <h1 id="thread-title">Conversation with {{ other_user.username }}</h1>
+      <a href="{% url 'inbox' %}">Back to Inbox</a>
     </div>
-
-    <div class="message-thread-panel">
-        {% for msg in thread_messages %}
-            <div class="message-bubble {% if msg.sender == request.user %}sent{% else %}received{% endif %}">
-                <div class="message-meta">
-                    <span class="message-author">{{ msg.sender.username }}</span>
-                    <span class="message-date">{{ msg.created_at|date:"M d, Y H:i" }}</span>
-                </div>
-                <div class="message-text">{{ msg.body|linebreaksbr }}</div>
-            </div>
-        {% empty %}
-            <div class="empty-state">
-                <p>No messages in this conversation yet.</p>
-            </div>
-        {% endfor %}
-    </div>
-
-    <form method="post" class="message-compose-form">
-        {% csrf_token %}
-        <label for="id_body">Reply</label>
-        <textarea id="id_body" name="body" rows="5" placeholder="Write your message here..."></textarea>
-        <button class="btn-primary" type="submit">Send Message</button>
+    <form method="post" action="{% url 'mark_thread_read' thread.id %}">
+      {% csrf_token %}
+      <button class="pf-v6-c-button pf-m-secondary" type="submit">Mark read</button>
     </form>
-</div>
+  </div>
+  <ol class="conversation-list" aria-label="Messages, oldest first">
+    {% for msg in thread_messages %}
+    <li class="pf-v6-c-card">
+      <div class="pf-v6-c-card__title messaging-header">
+        <h2>{{ msg.sender.username }}{% if msg.sender == request.user %} (you){% endif %}</h2>
+        <time datetime="{{ msg.created_at|date:'c' }}">{{ msg.created_at|date:"M d, Y H:i" }}</time>
+      </div>
+      <div class="pf-v6-c-card__body message-body">{{ msg.body }}</div>
+    </li>
+    {% empty %}
+    <li class="pf-v6-c-card"><div class="pf-v6-c-card__body">No messages in this conversation yet.</div></li>
+    {% endfor %}
+  </ol>
+  <section class="pf-prototype pf-v6-c-card" aria-labelledby="reply-title">
+    <div class="pf-v6-c-card__title"><h2 id="reply-title">Send a reply</h2></div>
+    <div class="pf-v6-c-card__body">
+      {% url 'thread_detail' thread.id as reply_url %}
+      {% include "includes/message_form.html" with action_url=reply_url submit_label="Send reply" %}
+    </div>
+  </section>
+</section>
 {% endblock %}

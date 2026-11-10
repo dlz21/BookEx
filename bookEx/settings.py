@@ -54,6 +54,9 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "bookEx.urls"
 
+# Resolve the application's named login route for @login_required redirects.
+LOGIN_URL = "login"
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -64,6 +67,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "bookMng.context_processors.navigation",
             ],
         },
     },
@@ -117,7 +121,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+# collectstatic copies source assets here for the production static server.
+# Keep this generated directory separate from STATICFILES_DIRS and uploads.
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / "bookEx" / "static"]
 
 
 # Email
@@ -128,7 +136,5 @@ MAILERS = {
         "BACKEND": "django.core.mail.backends.console.EmailBackend",
     },
 }
-
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'bookEx/static')];
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

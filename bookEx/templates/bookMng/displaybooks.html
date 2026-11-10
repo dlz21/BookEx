@@ -1,38 +1,52 @@
 {% extends "base.html" %}
-{% load static %}
 
-{% block sidenav %}
-   {% for item in item_list %}
-      <li>
-        <a href="{{ item.link }}">  {{ item.item }} </a>
-      </li>
-   {% endfor %}
-{% endblock sidenav %}
+{% block title %}Display Books | Book Exchange{% endblock %}
 
 {% block content %}
-  <div class="table-container">
-    <table class="professional-table">
-      <thead>
-        <tr class="table-title-row">
-          <th colspan="4">Display Books</th>
-        </tr>
-        <tr>
-          <th>Book Name</th>
-          <th>Book Price</th>
-          <th>User Name</th>
-          <th>Post Date</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for book in books %}
-        <tr>
-          <td><a href="book_detail/{{ book.id }}">  {{ book.name }} </a></td>
-          <td>{{ book.price }}</td>
-          <td>{{ book.username }}</td>
-          <td>{{ book.publishdate }}</td>
-        </tr>
-         {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  <section class="book-list pf-v6-c-card" aria-labelledby="displaybooks-title">
+    <div class="pf-v6-c-card__title"><h1 id="displaybooks-title">Display Books</h1></div>
+    <div class="pf-v6-c-card__body">
+      {% if books %}
+      <table
+        class="pf-v6-c-table pf-m-grid-md pf-m-striped pf-m-break-word"
+        role="table"
+        aria-labelledby="displaybooks-title"
+        id="table-striped"
+      >
+        <thead class="pf-v6-c-table__thead">
+          <tr class="pf-v6-c-table__tr" role="row">
+            <th class="pf-v6-c-table__th" role="columnheader" scope="col">Title</th>
+
+            <th class="pf-v6-c-table__th" role="columnheader" scope="col">Price</th>
+
+            <th
+              class="pf-v6-c-table__th"
+              role="columnheader"
+              scope="col"
+            >User Name</th>
+
+            <th class="pf-v6-c-table__th" role="columnheader" scope="col">Posted Date</th>
+          </tr>
+        </thead>
+
+        <tbody class="pf-v6-c-table__tbody" role="rowgroup">
+          {% for book in books %}
+            <tr class="pf-v6-c-table__tr" role="row">
+              <td
+                class="pf-v6-c-table__td"
+                role="cell"
+                data-label="Title"
+              ><a href="{% url 'book_detail' book.id %}">{{ book.name }}</a></td>
+              <td class="pf-v6-c-table__td" role="cell" data-label="Price">{{book.price}}</td>
+              <td class="pf-v6-c-table__td" role="cell" data-label="User Name">{{book.username}}</td>
+              <td class="pf-v6-c-table__td" role="cell" data-label="Posted Date">{{book.publishdate}}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p>No books have been posted yet. <a href="{% url 'postbook' %}">Post a book</a>.</p>
+      {% endif %}
+    </div>
+  </section>
 {% endblock content %}

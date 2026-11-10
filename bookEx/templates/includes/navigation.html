@@ -1,0 +1,9 @@
+<nav class="pf-v6-c-nav pf-m-horizontal primary-navigation" id="primary-navigation" aria-label="Primary">
+  <ul class="pf-v6-c-nav__list">
+    {% for item in navigation_items %}
+      <li class="pf-v6-c-nav__item">
+        <a class="pf-v6-c-nav__link{% if item.current %} pf-m-current{% endif %}" href="{{ item.url }}"{% if item.current %} aria-current="{{ item.current }}"{% endif %}>{{ item.label }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+</nav>

@@ -1,54 +1,61 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block sidenav %}
-   {% for item in item_list %}
-      <li>
-        <a href="{{ item.link }}">  {{ item.item }} </a>
-      </li>
-   {% endfor %}
-{% endblock sidenav %}
+{% block title %}My Books | Book Exchange{% endblock %}
 
 {% block content %}
-   <h1>Display Books</h1>
-   <table border="2" >
-      <tr>
-          <th>
-              Book Name
-          </th>
-          <th>
-              Book Price
-          </th>
-          <th>
-              User Name
-          </th>
+<section class="book-list pf-v6-c-card" aria-labelledby="mybooks-title">
+    <div class="pf-v6-c-card__title"><h1 id="mybooks-title">My Books</h1></div>
+    <div class="pf-v6-c-card__body">
+      {% if books %}
+      <table
+        class="pf-v6-c-table pf-m-grid-md pf-m-striped pf-m-break-word"
+        role="table"
+        aria-labelledby="mybooks-title"
+        id="table-striped"
+      >
+        <thead class="pf-v6-c-table__thead">
+          <tr class="pf-v6-c-table__tr" role="row">
+            <th class="pf-v6-c-table__th" role="columnheader" scope="col">Title</th>
 
-          <th>
-              DELETE
-          </th>
+            <th class="pf-v6-c-table__th" role="columnheader" scope="col">Price</th>
 
+            <th
+              class="pf-v6-c-table__th"
+              role="columnheader"
+              scope="col"
+            >Posted Date</th>
 
+            <th class="pf-v6-c-table__th" role="columnheader" scope="col">Actions</th>
+          </tr>
+        </thead>
 
-      </tr>
-   {% for book in books %}
-       <tr>
-         <td>
-        <a href="book_detail/{{ book.id }}">  {{ book.name }} </a>
-         </td>
-         <td>
-            {{ book.price }}
-         </td>
-          <td>
-            {{ book.username }}
-         </td>
-
-
-       <td>
-        <a href="book_delete/{{ book.id }}">  <img src="{% static 'delete_button.jpg' %}" width="100" />
-         </a>
-       </td>
-
-      </tr>
-   {% endfor %}
-   </table>
+        <tbody class="pf-v6-c-table__tbody" role="rowgroup">
+          {% for book in books %}
+            <tr class="pf-v6-c-table__tr" role="row">
+              <td
+                class="pf-v6-c-table__td"
+                role="cell"
+                data-label="Title"
+              ><a href="{% url 'book_detail' book.id %}">{{ book.name }}</a></td>
+              <td class="pf-v6-c-table__td" role="cell" data-label="Price">{{book.price}}</td>
+              <td class="pf-v6-c-table__td" role="cell" data-label="Posted Date">{{book.publishdate}}</td>
+              <td class="pf-v6-c-table__td" role="cell" data-label="Actions">
+                  <a
+                      class="pf-v6-c-button pf-m-danger pf-m-secondary"
+                      aria-label="Delete the book: {{ book.name }}"
+                      href="book_delete/{{ book.id }}"
+                    >
+                      <span class="pf-v6-c-button__text">Delete</span>
+                  </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p>No books have been posted yet. <a href="{% url 'postbook' %}">Post a book</a>.</p>
+      {% endif %}
+    </div>
+  </section>
 {% endblock content %}

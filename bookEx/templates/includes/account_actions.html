@@ -1,0 +1,12 @@
+<div class="account-actions" aria-label="Account" role="group">
+  {% if user.is_authenticated %}
+    <span class="account-actions__username">Signed in as {{ user.username }}</span>
+    <form action="{% url 'logout' %}?next={% url 'index' %}" method="post">
+      {% csrf_token %}
+      <button class="pf-v6-c-button pf-m-secondary" type="submit">Log out</button>
+    </form>
+  {% else %}
+    <a class="pf-v6-c-button pf-m-secondary" href="{% url 'login' %}{% if request.resolver_match.url_name != 'login' and request.resolver_match.url_name != 'register' and request.resolver_match.url_name != 'register-success' %}?next={{ request.get_full_path|urlencode }}{% endif %}"{% if request.resolver_match.url_name == 'login' %} aria-current="page"{% endif %}>Log in</a>
+    <a class="pf-v6-c-button pf-m-primary" href="{% url 'register' %}"{% if request.resolver_match.url_name == 'register' %} aria-current="page"{% endif %}>Register</a>
+  {% endif %}
+</div>

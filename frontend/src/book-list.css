@@ -1,0 +1,24 @@
+@import "@patternfly/patternfly/components/Table/table.css";
+@import "@patternfly/patternfly/components/Table/table-grid.css";
+
+.book-list {
+  width: 100%;
+  max-width: 75rem;
+  margin-inline: auto;
+}
+
+/* PF6's responsive table uses this named container for its grid breakpoint. */
+.book-list .pf-v6-c-card__body {
+  container: pf-v6-contain-table / inline-size;
+}
+
+/* Native table defaults needed when importing component CSS without PF's
+   full global reset. Color, spacing, borders, and stripes come from PF. */
+.book-list .pf-v6-c-table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.book-list .pf-v6-c-table__th {
+  text-align: start;
+}

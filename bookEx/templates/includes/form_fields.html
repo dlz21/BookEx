@@ -1,0 +1,39 @@
+{% if form.errors %}
+  <div class="pf-v6-c-alert pf-m-danger pf-m-inline" role="alert" tabindex="-1" data-form-errors>
+    <h2 class="pf-v6-c-alert__title">Please correct the form</h2>
+    <div class="pf-v6-c-alert__description">
+      {{ form.non_field_errors }}
+      <ul>
+        {% for field in form %}
+          {% if field.errors %}
+            <li><a href="#{{ field.id_for_label }}">{{ field.label }}: {{ field.errors|striptags }}</a></li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+{% endif %}
+
+{% for field in form %}
+  {% if field.is_hidden %}
+    {{ field }}
+  {% else %}
+    <div class="pf-v6-c-form__group">
+      <div class="pf-v6-c-form__group-label">
+        <label class="pf-v6-c-form__label" for="{{ field.id_for_label }}">
+          <span class="pf-v6-c-form__label-text">{{ field.label }}</span>
+          {% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}
+        </label>
+      </div>
+      <div class="pf-v6-c-form__group-control">
+        <span class="pf-v6-c-form-control{% if field.errors %} pf-m-error{% endif %}">
+          {{ field }}
+        </span>
+        {% if field.help_text %}
+          <div class="pf-v6-c-form__helper-text" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</div>
+        {% endif %}
+        {{ field.errors }}
+      </div>
+    </div>
+  {% endif %}
+{% endfor %}

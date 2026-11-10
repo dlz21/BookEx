@@ -85,3 +85,7 @@ Thumbs.db
 
 # DB
 db.sqlite3
+
+**/node_modules
+**/dist
+staticfiles/

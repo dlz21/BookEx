@@ -1,29 +1,27 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block sidenav %}
-   {% for item in item_list %}
-      <li>
-        <a href="{{ item.link }}">  {{ item.item }} </a>
-      </li>
-   {% endfor %}
-{% endblock sidenav %}
-
 {% block content %}
-    <h1>Post Book</h1>
+  <section class="pf-prototype pf-v6-c-card" aria-labelledby="postbook-title">
+    <div class="pf-v6-c-card__title"><h1 id="postbook-title">Post Book</h1></div>
+    <div class="pf-v6-c-card__body">
     {% if submitted %}
-        <h1>Book Posted Successfully!</h1>
+      <div class="pf-v6-c-alert pf-m-success pf-m-inline" role="status">
+        <h2 class="pf-v6-c-alert__title">Book posted successfully!</h2>
+        <div class="pf-v6-c-alert__description">
+          <a href="{% url 'displaybooks' %}">Browse books</a> or
+          <a href="{% url 'postbook' %}">post another book</a>.
+        </div>
+      </div>
     {% else %}
-        <form action="" enctype="multipart/form-data" method="post" novalidate>
-            <table>
-              {{ form.as_table }}
-              <tr>
-                 <td>
-                    <input type="submit" value="Submit">
-                 </td>
-              </tr>
-            </table>
-            {% csrf_token %}
-        </form>
+      <form class="pf-v6-c-form" action="{% url 'postbook' %}" enctype="multipart/form-data" method="post">
+        {% csrf_token %}
+        {% include "includes/form_fields.html" %}
+        <div class="pf-v6-c-form__group pf-m-action">
+          <button class="pf-v6-c-button pf-m-primary" type="submit">Post book</button>
+        </div>
+      </form>
     {% endif %}
+    </div>
+  </section>
 {% endblock content %}

@@ -1,0 +1,22 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/main.ts",
+  "scripts": {
+    "build": "npm run typecheck && node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
+    "watch": "node build.mjs --watch"
+  },
+  "keywords": [],
+  "author": "Leo Zavala",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@patternfly/patternfly": "6.7.0",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
