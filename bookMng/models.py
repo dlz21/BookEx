@@ -24,6 +24,8 @@ class MainMenu(models.Model):
             "mybooks": "mybooks",
             "compose": "compose_message",
             "inbox": "inbox",
+            "about": "about",
+            "search": "search_books",
         }
         route = routes.get(self.link.strip("/"))
         if route:

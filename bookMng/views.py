@@ -27,6 +27,38 @@ def index(request):
       }
     )
 
+def about(request):
+    return render(
+        request,
+        'bookMng/about.html',
+        {
+            'item_list': MainMenu.objects.all()
+        }
+    )
+
+def search_books(request):
+    query = request.GET.get('q', '')
+
+    books = Book.objects.none()
+
+    if query:
+        books = Book.objects.filter(
+            Q(name__icontains=query) |
+            Q(username__username__icontains=query)
+        )
+
+        for b in books:
+            b.pic_path = b.picture.url[14:]
+
+    return render(
+        request,
+        'bookMng/search.html',
+        {
+            'item_list': MainMenu.objects.all(),
+            'books': books,
+            'query': query,
+        }
+    )
 
 @login_required(login_url=reverse_lazy('login'))
 def postbook(request):
