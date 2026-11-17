@@ -16,6 +16,7 @@ def navigation(request):
                 ("Home", "index"),
                 ("Post Book", "postbook"),
                 ("Display Books", "displaybooks"),
+                ("Search", "search_books"),
                 ("My Books", "mybooks"),
                 ("Compose Message", "compose_message"),
                 ("Inbox", "inbox"),

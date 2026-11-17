@@ -6,7 +6,7 @@
 {% block content %}
 
   <section class="book-list pf-v6-c-card" aria-labelledby="bookdetail-title">
-    <div class="pf-v6-c-card__title"><h1 id="bookdetail-title">My Books</h1></div>
+    <div class="pf-v6-c-card__title"><h1 id="bookdetail-title">{{ book.name }}</h1></div>
     <div class="pf-v6-c-card__body">
       <table
         class="pf-v6-c-table pf-m-grid-md pf-m-striped pf-m-break-word"
@@ -28,7 +28,11 @@
         <tbody class="pf-v6-c-table__tbody" role="rowgroup">
             <tr class="pf-v6-c-table__tr" role="row">
               <td class="pf-v6-c-table__td" role="cell" data-label="Image">
-                <img src="{% static book.pic_path %}" width="100" />
+                {% if book.cover_url %}
+                  <img src="{{ book.cover_url }}" width="100" alt="Cover of {{ book.name }}" />
+                {% else %}
+                  No cover available
+                {% endif %}
               </td>
               <td class="pf-v6-c-table__td" role="cell" data-label="Title">{{book.name}}</td>
               <td class="pf-v6-c-table__td" role="cell" data-label="Price">{{book.price}}</td>

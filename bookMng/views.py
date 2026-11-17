@@ -11,6 +11,8 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.core.paginator import Paginator
+from django.templatetags.static import static
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
@@ -36,27 +38,48 @@ def about(request):
         }
     )
 
+def _book_cover_url(book):
+    if not book.picture:
+        return ''
+    # Legacy uploads live in static; other storage backends own their URLs.
+    if book.picture.name.startswith('bookEx/static/'):
+        return static(book.picture.name.removeprefix('bookEx/static/'))
+    return book.picture.url
+
+
 def search_books(request):
-    query = request.GET.get('q', '')
+    query = request.GET.get('q', '').strip()
+    sort_options = {
+        'newest': ('-publishdate', '-pk'),
+        'price_asc': ('price', 'pk'),
+        'price_desc': ('-price', 'pk'),
+        'title': ('name', 'pk'),
+    }
+    sort = request.GET.get('sort', 'newest')
+    if sort not in sort_options:
+        sort = 'newest'
 
     books = Book.objects.none()
 
     if query:
-        books = Book.objects.filter(
+        books = Book.objects.select_related('username').filter(
             Q(name__icontains=query) |
             Q(username__username__icontains=query)
-        )
+        ).order_by(*sort_options[sort])
 
-        for b in books:
-            b.pic_path = b.picture.url[14:]
+    page = Paginator(books, 12).get_page(request.GET.get('page'))
+    for book in page.object_list:
+        book.cover_url = _book_cover_url(book)
 
     return render(
         request,
         'bookMng/search.html',
         {
             'item_list': MainMenu.objects.all(),
-            'books': books,
+            'books': page.object_list,
+            'page_obj': page,
             'query': query,
+            'sort': sort,
         }
     )
 
@@ -101,8 +124,8 @@ def displaybooks(request):
     })
 
 def book_detail(request, book_id):
-    book = Book.objects.get(id=book_id)
-    book.pic_path = book.picture.url[14:]
+    book = get_object_or_404(Book, id=book_id)
+    book.cover_url = _book_cover_url(book)
 
     return render(request,'bookMng/book_detail.html', {
         'item_list': MainMenu.objects.all(),
