@@ -192,6 +192,25 @@ try {
   }
   assert.equal(await evaluate("[...document.querySelectorAll('#table-striped tbody a')].every(a => a.pathname.startsWith('/book_detail/'))"), true);
 
+  // Search works through native GET forms, including with scripts disabled.
+  await navigate('/search/');
+  assert.equal(await evaluate("document.querySelector('.book-search__empty').textContent.includes('Your next chapter')"), true);
+  await fill('#book-query', 'Long title');
+  await enter('#book-query');
+  await until("document.querySelectorAll('.book-search__book').length === 1");
+  for (const width of [360, 768, 1280]) {
+    await send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
+    await until('document.documentElement.scrollWidth <= innerWidth');
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.book-search__grid')).display"), 'grid');
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('.book-search__filters')).borderRadius !== '0px'"), true);
+  }
+  await fill('#book-query', 'no matching book');
+  await enter('#book-query');
+  await until("!!document.querySelector('.book-search__empty')");
+  assert.equal(await evaluate("document.querySelector('.book-search__empty').textContent.includes('No books found')"), true);
+  await enter('.book-search__actions a');
+  await until("document.querySelector('#book-query').value === ''");
+
   // Messaging submits native controls in both JS modes against isolated data.
   const responsiveMessaging = async () => {
     for (const width of [360, 768, 1280]) {

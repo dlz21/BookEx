@@ -94,7 +94,7 @@ class SharedShellTests(TestCase):
         for route in ("index", "login", "register", "register-success"):
             with self.subTest(route=route):
                 response = self.client.get(reverse(route))
-                self.assertEqual(len(response.context["navigation_items"]), 6)
+                self.assertEqual(len(response.context["navigation_items"]), 7)
                 self.assertContains(response, 'aria-label="Primary"', count=1)
                 self.assertContains(response, '<main id="main-content" tabindex="-1"', count=1)
                 self.assertContains(response, 'href="#main-content"', count=1)
@@ -233,7 +233,7 @@ class PatternFlyBrowserTests(StaticLiveServerTestCase):
         )
         Book.objects.create(
             name="Long title " + "x" * 180, price="1.00", username=user,
-            picture="bookEx/static/uploads/table-fixture.gif",
+            picture="bookEx/static/uploads/django.jpeg",
         )
         with TemporaryDirectory() as media, override_settings(MEDIA_ROOT=media):
             image = Path(media) / "browser-cover.gif"
