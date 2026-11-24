@@ -26,6 +26,7 @@ class MainMenu(models.Model):
             "inbox": "inbox",
             "about": "about",
             "search": "search_books",
+            "favorites": "favorites",
         }
         route = routes.get(self.link.strip("/"))
         if route:
@@ -41,6 +42,17 @@ class Book(models.Model):
     picture = models.FileField(upload_to='bookEx/static/uploads')
     pic_path = models.CharField(max_length=300, editable=False, blank=True)
     username = models.ForeignKey(User, blank=True, null=True, on_delete=models.CASCADE)
+
+
+class Favorite(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                             related_name="favorites")
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="favorites")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "book"], name="unique_user_book_favorite"),
+        ]
 
 
 class MessageThread(models.Model):

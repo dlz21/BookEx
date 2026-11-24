@@ -76,6 +76,7 @@
                 <p class="book-search__muted">Posted {{ book.publishdate|date:"M j, Y" }}</p>
               </div>
               <div class="pf-v6-c-card__footer">
+                {% include "includes/favorite_button.html" %}
                 <a class="pf-v6-c-button pf-m-secondary" href="{% url 'book_detail' book.pk %}" aria-label="View details for {{ book.name }}">View details</a>
               </div>
             </article>

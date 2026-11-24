@@ -10,14 +10,15 @@ from .forms import BookForm, ComposeMessageForm, ReplyForm
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import BooleanField, Exists, OuterRef, Q, Value
 from django.core.paginator import Paginator
 from django.templatetags.static import static
-from django.http import Http404, HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse, HttpResponseBadRequest
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from .models import MessageThread, PrivateMessage
+from .models import Favorite, MessageThread, PrivateMessage
 
 # Create your views here.
 def index(request):
@@ -47,6 +48,47 @@ def _book_cover_url(book):
     return book.picture.url
 
 
+def _with_favorite_state(books, user):
+    """Annotate the current user's state without a query for each book."""
+    state = (
+        Exists(Favorite.objects.filter(user=user, book_id=OuterRef('pk')))
+        if user.is_authenticated else Value(False, output_field=BooleanField())
+    )
+    return books.annotate(is_favorited=state)
+
+
+@login_required
+@require_GET
+def favorites(request):
+    books = _with_favorite_state(
+        Book.objects.filter(favorites__user=request.user).select_related('username').order_by('name', 'pk'),
+        request.user,
+    )
+    for book in books:
+        book.cover_url = _book_cover_url(book)
+    return render(request, 'bookMng/favorites.html', {'books': books})
+
+
+@login_required
+@require_POST
+def set_favorite(request, book_id):
+    book = get_object_or_404(Book, pk=book_id)
+    action = request.POST.get('action')
+    if action == 'add':
+        Favorite.objects.get_or_create(user=request.user, book=book)
+    elif action == 'remove':
+        Favorite.objects.filter(user=request.user, book=book).delete()
+    else:
+        return HttpResponseBadRequest('Choose add or remove.')
+
+    destination = request.POST.get('next', '')
+    if not url_has_allowed_host_and_scheme(
+        destination, allowed_hosts={request.get_host()}, require_https=request.is_secure(),
+    ):
+        destination = reverse_lazy('favorites')
+    return redirect(destination)
+
+
 def search_books(request):
     query = request.GET.get('q', '').strip()
     sort_options = {
@@ -67,7 +109,7 @@ def search_books(request):
             Q(username__username__icontains=query)
         ).order_by(*sort_options[sort])
 
-    page = Paginator(books, 12).get_page(request.GET.get('page'))
+    page = Paginator(_with_favorite_state(books, request.user), 12).get_page(request.GET.get('page'))
     for book in page.object_list:
         book.cover_url = _book_cover_url(book)
 
@@ -113,9 +155,7 @@ def postbook(request):
 
 @login_required(login_url=reverse_lazy('login'))
 def displaybooks(request):
-    books = Book.objects.all()
-    for b in books:
-        b.pic_path = b.picture.url[14:]
+    books = _with_favorite_state(Book.objects.select_related('username'), request.user)
     return render(request,
         'bookMng/displaybooks.html',
         {
@@ -124,7 +164,7 @@ def displaybooks(request):
     })
 
 def book_detail(request, book_id):
-    book = get_object_or_404(Book, id=book_id)
+    book = get_object_or_404(_with_favorite_state(Book.objects.all(), request.user), id=book_id)
     book.cover_url = _book_cover_url(book)
 
     return render(request,'bookMng/book_detail.html', {
@@ -134,10 +174,7 @@ def book_detail(request, book_id):
 
 @login_required
 def mybooks(request):
-    books = Book.objects.filter(username=request.user)
-
-    for b in books:
-        b.pic_path = b.picture.url[14:]
+    books = _with_favorite_state(Book.objects.filter(username=request.user), request.user)
 
     return render(request,'bookMng/mybooks.html', {
         'item_list': MainMenu.objects.all(),

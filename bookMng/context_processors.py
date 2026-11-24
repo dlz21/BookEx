@@ -28,6 +28,10 @@ def navigation(request):
     items = [{"label": "Home", "url": home_url}] + [
         item for item in items if item["url"] != home_url
     ]
+    # Keep Favorites discoverable even with legacy/custom database menus.
+    favorites_url = reverse("favorites")
+    if not any(item["url"] == favorites_url for item in items):
+        items.append({"label": "Favorites", "url": favorites_url})
     route = request.resolver_match.url_name if request.resolver_match else None
     for item in items:
         item["current"] = "page" if item["url"] == request.path else ""

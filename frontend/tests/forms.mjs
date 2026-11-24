@@ -204,6 +204,35 @@ try {
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.book-search__grid')).display"), 'grid');
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.book-search__filters')).borderRadius !== '0px'"), true);
   }
+  // Favorites use keyboard-operable native POSTs, with and without page JS.
+  const searchUrl = await evaluate('location.pathname + location.search');
+  const favoriteButton = '.favorite-action button';
+  assert.equal(await evaluate(`document.querySelector('${favoriteButton}').getAttribute('aria-pressed')`), 'false');
+  await enter(favoriteButton);
+  await until("document.querySelector('.favorite-action button')?.getAttribute('aria-pressed') === 'true'");
+  assert.equal(await evaluate('location.pathname + location.search'), searchUrl);
+  const detailUrl = await evaluate("document.querySelector('.book-search__book h3 a').pathname");
+  await navigate(detailUrl);
+  assert.equal(await evaluate(`document.querySelector('${favoriteButton}').getAttribute('aria-pressed')`), 'true');
+  await enter(favoriteButton);
+  await until("document.querySelector('.favorite-action button')?.getAttribute('aria-pressed') === 'false'");
+  await enter(favoriteButton);
+  await until("document.querySelector('.favorite-action button')?.getAttribute('aria-pressed') === 'true'");
+  await navigate('/mybooks');
+  assert.equal(await evaluate("document.querySelectorAll('.favorite-action button[aria-pressed=true]').length"), 1);
+  await navigate('/favorites/');
+  assert.equal(await evaluate("document.querySelector('#primary-navigation a[aria-current=page]').pathname"), '/favorites/');
+  assert.equal(await evaluate("document.querySelectorAll('.book-list tbody tr').length"), 1);
+  assert.equal(await evaluate("document.querySelector('.book-list tbody img').alt.startsWith('Cover of Long title')"), true);
+  for (const width of [360, 768, 1280]) {
+    await send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
+    await until('document.documentElement.scrollWidth <= innerWidth');
+  }
+  await enter(favoriteButton);
+  await until("document.querySelector('.book-list').textContent.includes('No favorites yet')");
+  await navigate(searchUrl);
+  assert.equal(await evaluate(`document.querySelector('${favoriteButton}').getAttribute('aria-pressed')`), 'false');
+
   await fill('#book-query', 'no matching book');
   await enter('#book-query');
   await until("!!document.querySelector('.book-search__empty')");
@@ -273,7 +302,7 @@ try {
   await until("location.pathname === '/' && !!document.querySelector('.account-actions a[href=\"/register\"]')");
   assert.deepEqual(runtimeErrors, []);
   assert.deepEqual(networkErrors, []);
-  console.log(`PASS (${mode}): shell, forms/upload, book tables, messaging validation/send/reply/read, responsive content at 360/768/1280px`);
+  console.log(`PASS (${mode}): shell, forms/upload, book tables, favorites add/remove, messaging validation/send/reply/read, responsive content at 360/768/1280px`);
 } finally {
   await command("Browser.close").catch(() => {});
   chrome.kill();

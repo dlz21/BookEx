@@ -41,6 +41,7 @@
               <td class="pf-v6-c-table__td" role="cell" data-label="Price">{{book.price}}</td>
               <td class="pf-v6-c-table__td" role="cell" data-label="Posted Date">{{book.publishdate}}</td>
               <td class="pf-v6-c-table__td" role="cell" data-label="Actions">
+                  {% include "includes/favorite_button.html" %}
                   <a
                       class="pf-v6-c-button pf-m-danger pf-m-secondary"
                       aria-label="Delete the book: {{ book.name }}"
