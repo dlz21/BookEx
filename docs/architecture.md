@@ -6,6 +6,18 @@ complete per maintainer confirmation; historical plans are [archived](archive/pa
 
 Source paths in this document are relative to the repository root.
 
+## Favorites
+
+Signed-in users can save or remove books using the PatternFly star buttons on
+Search, Display Books, My Books, and book detail. **Favorites** in the navigation
+opens `/favorites/`, a private table with covers, titles, sellers, and removal
+buttons. The application has no book-author field, so this MVP displays sellers.
+The menu link remains available with custom menu records.
+
+Favorites work without JavaScript. Changes use CSRF-protected POSTs, retain the
+current page/search parameters, and affect only the signed-in user's list.
+Run `python manage.py migrate` after updating to create the favorites table.
+
 ## Shared shell
 
 `base.html` includes `includes/navigation.html` and

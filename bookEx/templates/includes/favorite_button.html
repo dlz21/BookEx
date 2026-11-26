@@ -1,0 +1,14 @@
+{% if user.is_authenticated %}
+  <form class="favorite-action" method="post" action="{% url 'set_favorite' book.pk %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button class="pf-v6-c-button pf-m-secondary" type="submit"
+            name="action" value="{% if book.is_favorited %}remove{% else %}add{% endif %}"
+            aria-label="Favorite: {{ book.name }}" aria-pressed="{{ book.is_favorited|yesno:'true,false' }}">
+      <span class="pf-v6-c-button__icon">{% include "includes/favorite_icon.html" %}</span>
+      <span class="pf-v6-c-button__text">{% if book.is_favorited %}Remove favorite{% else %}Add favorite{% endif %}</span>
+    </button>
+  </form>
+{% else %}
+  <a class="pf-v6-c-button pf-m-secondary" href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}">Log in to favorite</a>
+{% endif %}

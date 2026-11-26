@@ -94,7 +94,7 @@ class SharedShellTests(TestCase):
         for route in ("index", "login", "register", "register-success"):
             with self.subTest(route=route):
                 response = self.client.get(reverse(route))
-                self.assertEqual(len(response.context["navigation_items"]), 7)
+                self.assertEqual(len(response.context["navigation_items"]), 8)
                 self.assertContains(response, 'aria-label="Primary"', count=1)
                 self.assertContains(response, '<main id="main-content" tabindex="-1"', count=1)
                 self.assertContains(response, 'href="#main-content"', count=1)
@@ -118,20 +118,20 @@ class SharedShellTests(TestCase):
         for route in ("index", "login", "register"):
             response = self.client.get(reverse(route))
             self.assertContains(response, 'href="/help/">Help &amp; Support</a>')
-            self.assertEqual(len(response.context["navigation_items"]), 2)
+            self.assertEqual(len(response.context["navigation_items"]), 3)
 
     def test_home_is_first_once_regardless_of_database_order_or_omission(self):
         MainMenu.objects.create(item="Inbox", link="inbox/")
         self.assertEqual(
             [item["label"] for item in self.client.get(reverse("index")).context["navigation_items"]],
-            ["Home", "Inbox"],
+            ["Home", "Inbox", "Favorites"],
         )
         MainMenu.objects.create(item="Home", link="/")
         MainMenu.objects.create(item="Home alias", link="")
         for route in ("index", "login", "register"):
             with self.subTest(route=route):
                 items = self.client.get(reverse(route)).context["navigation_items"]
-                self.assertEqual([item["label"] for item in items], ["Home", "Inbox"])
+                self.assertEqual([item["label"] for item in items], ["Home", "Inbox", "Favorites"])
                 self.assertEqual(items[0]["url"], reverse("index"))
 
     def test_account_actions_escape_username_and_logout_requires_csrf_post(self):

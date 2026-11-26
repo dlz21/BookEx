@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Favorites | Book Exchange{% endblock %}
+
+{% block content %}
+<section class="book-list pf-v6-c-card" aria-labelledby="favorites-title">
+  <div class="pf-v6-c-card__title"><h1 id="favorites-title">Favorites</h1></div>
+  <div class="pf-v6-c-card__body">
+    {% if books %}
+      <table class="pf-v6-c-table pf-m-grid-md pf-m-striped pf-m-break-word" role="table" aria-labelledby="favorites-title">
+        <thead class="pf-v6-c-table__thead">
+          <tr class="pf-v6-c-table__tr" role="row">
+            <th class="pf-v6-c-table__th" scope="col">Image</th>
+            <th class="pf-v6-c-table__th" scope="col">Title</th>
+            <th class="pf-v6-c-table__th" scope="col">Seller</th>
+            <th class="pf-v6-c-table__th" scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="pf-v6-c-table__tbody" role="rowgroup">
+          {% for book in books %}
+            <tr class="pf-v6-c-table__tr" role="row">
+              <td class="pf-v6-c-table__td" data-label="Image">
+                {% if book.cover_url %}
+                  <img src="{{ book.cover_url }}" width="100" alt="Cover of {{ book.name }}" loading="lazy">
+                {% else %}No cover available{% endif %}
+              </td>
+              <td class="pf-v6-c-table__td" data-label="Title"><a href="{% url 'book_detail' book.pk %}">{{ book.name }}</a></td>
+              <td class="pf-v6-c-table__td" data-label="Seller">{{ book.username.username|default:"Unavailable" }}</td>
+              <td class="pf-v6-c-table__td" data-label="Actions">{% include "includes/favorite_button.html" %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No favorites yet. Use a book’s star button to save it here.</p>
+      <a class="pf-v6-c-button pf-m-primary" href="{% url 'search_books' %}">Find books</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
